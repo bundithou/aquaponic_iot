@@ -26,8 +26,8 @@ const char* password = "0123123156";   // รหัสสำหรับลง�
 // Data wire is plugged into pin D1 on the ESP8266 12-E - GPIO 5
 #define ONE_WIRE_BUS D3
 
-//#define DHTPIN D3
-//DHT_Unified dht(DHTPIN, DHTTYPE);
+#define DHTPIN D3
+DHT_Unified dht(DHTPIN, DHTTYPE);
 
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 OneWire oneWire(ONE_WIRE_BUS);
