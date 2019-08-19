@@ -25,8 +25,7 @@
 #define onPin           7
 #define offPin          6
 
-#define Valve1          13
-#define Valve2          12  
+#define Valve           12  
 #define Power_pump      11
 #define Power_Air_Pump  10
 
@@ -42,8 +41,8 @@ void setup() {
   // initialize digital pin LED_BUILTIN as an output.
   Serial.begin(115200);
   Serial.println("Booting");
-  pinMode(Valve1,          OUTPUT);
-  pinMode(Valve2,          OUTPUT);
+
+  pinMode(Valve,          OUTPUT);
   pinMode(Power_pump,      OUTPUT);
   pinMode(Power_Air_Pump,  OUTPUT);
   pinMode(onPin, INPUT);
@@ -81,8 +80,7 @@ void loop() {
 
 void normalSystem(boolean Open){
   if (Open){
-    digitalWrite(Valve1, HIGH);
-    digitalWrite(Valve2, HIGH);
+    digitalWrite(Valve, HIGH);
     delay(3000); 
     digitalWrite(Power_pump, HIGH);
     digitalWrite(Power_Air_Pump, HIGH);
@@ -90,7 +88,6 @@ void normalSystem(boolean Open){
     digitalWrite(Power_pump, LOW);
     digitalWrite(Power_Air_Pump, LOW);
     delay(3000); 
-    digitalWrite(Valve1, LOW);
-    digitalWrite(Valve2, LOW);
+    digitalWrite(Valve, LOW);
   }
 }
