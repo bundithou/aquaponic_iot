@@ -2,7 +2,7 @@
 #include <DallasTemperature.h>
 
 // Data wire is plugged into port D2 on the ESP8266
-#define ONE_WIRE_BUS 2
+#define ONE_WIRE_BUS A4
 
 // Setup a oneWire instance to communicate with any OneWire devices
 OneWire oneWire(ONE_WIRE_BUS);
