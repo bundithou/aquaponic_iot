@@ -22,8 +22,8 @@ float temperature = 25;                                       //default temperat
 #define EEPROM_write(address, p) {int i = 0; byte *pp = (byte*)&(p);for(; i < sizeof(p); i++) EEPROM.write(address+i, pp[i]);}
 #define EEPROM_read(address, p)  {int i = 0; byte *pp = (byte*)&(p);for(; i < sizeof(p); i++) pp[i]=EEPROM.read(address+i);}
 
-#define ReceivedBufferLength 20
-char receivedBuffer[ReceivedBufferLength+1];    // store the serial command
+#define ReceivedBufferLength                    20
+char receivedBuffer[ReceivedBufferLength+1];        // store the serial command
 byte receivedBufferIndex = 0;
 
 #define SCOUNT                                  30           // sum of sample point
@@ -48,7 +48,7 @@ const float SaturationValueTab[41] PROGMEM = {      //saturation dissolved oxyge
 6.41,
 };
 
-
+// 
 
 void setup() {
   // put your setup code here, to run once:
@@ -58,7 +58,8 @@ void setup() {
   // ph
   pinMode(LED,OUTPUT);
 
-  //
+  // oxygen
+  pinMode(DoSensorPin,INPUT);
 }
 
 void loop() {
@@ -133,3 +134,7 @@ double avergearray(int* arr, int number){
   }//if
   return avg;
 }
+
+/*
+oxygen sensor function
+*/
