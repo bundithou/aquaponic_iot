@@ -25,28 +25,37 @@
 #define onPin           7
 #define offPin          6
 
-#define Valve           12  
-#define Power_pump      11
-#define Power_Air_Pump  10
+#define Valvepump       11 
+#define Valvetank       12 
+#define Power_pump      9
+#define Power_Air_Pump  8
 
 int Delay_Time = 0;
 
-int state = HIGH;      // the system currently closed
+int state = LOW;      // the system currently closed
 
-int on_reading;
+int on_reading  ;
 int off_reading;    
 
 // the setup function runs once when you press reset or power the board
 void setup() {
   // initialize digital pin LED_BUILTIN as an output.
-  Serial.begin(115200);
+  Serial.begin(9600);
   Serial.println("Booting");
 
-  pinMode(Valve,          OUTPUT);
+  pinMode(Valvepump,          OUTPUT);
+  pinMode(Valvetank,          OUTPUT);
   pinMode(Power_pump,      OUTPUT);
   pinMode(Power_Air_Pump,  OUTPUT);
   pinMode(onPin, INPUT);
   pinMode(offPin, INPUT);
+
+  digitalWrite(Power_pump, LOW);
+  digitalWrite(Power_Air_Pump, LOW); 
+  digitalWrite(Valvepump, LOW);
+  digitalWrite(Valvetank, LOW);
+
+  
 }
 
 // the loop function runs over and over again forever
@@ -62,32 +71,54 @@ void loop() {
   Serial.println(off_reading);
 
   if (on_reading == LOW) {                // if on_button is toggled  
-    if (state == HIGH){                   // if system is closed
-      state = LOW;                        // open the system
-      normalSystem(true);                 // 
+    delay(50);
+    if (state == LOW){                   // if system is closed
+      state = HIGH;                        // open the system
+      //normalSystem(true);                 // 
+      Serial.println("system on");
+      digitalWrite(Valvepump, HIGH);
+      digitalWrite(Valvetank, HIGH);
+      Serial.println("valvesHigh");
+      delay(5000); 
+      digitalWrite(Power_pump, HIGH);
+      Serial.println("pumpHigh");
+      digitalWrite(Power_Air_Pump, HIGH);
     }
   }
   
   if (off_reading == LOW){                // if off_button is toggled
-    if (state == LOW){                    // if system is opened
-      state = HIGH;                       // close the system
-      normalSystem(false);
+    delay(50);
+    if (state == HIGH){     
+      state =LOW;                       // close the system
+      //normalSystem(false);
+      Serial.println("system off");
+      digitalWrite(Power_pump, LOW);
+      digitalWrite(Power_Air_Pump, LOW);
+      delay(500); 
+      digitalWrite(Valvepump, LOW);
+      digitalWrite(Valvetank, LOW);
     }  
   }
   
-  delay(500);                             // wait for half a second
+  delay(1000);                             // wait for half a second
 }
 
 void normalSystem(boolean Open){
   if (Open){
-    digitalWrite(Valve, HIGH);
-    delay(3000); 
+    Serial.println("system on");
+    digitalWrite(Valvepump, HIGH);
+    digitalWrite(Valvetank, HIGH);
+    Serial.println("valvesHigh");
+    delay(5000); 
     digitalWrite(Power_pump, HIGH);
+    Serial.println("pumpHigh");
     digitalWrite(Power_Air_Pump, HIGH);
   } else {
+    Serial.println("system off");
     digitalWrite(Power_pump, LOW);
     digitalWrite(Power_Air_Pump, LOW);
-    delay(3000); 
-    digitalWrite(Valve, LOW);
+    delay(500); 
+    digitalWrite(Valvepump, LOW);
+    digitalWrite(Valvetank, LOW);
   }
 }
