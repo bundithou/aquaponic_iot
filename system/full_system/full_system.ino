@@ -13,16 +13,31 @@
 #define Power_Air_Pump  9
 
 //ultrasonic
-#define trigPin1        3  // tank 
-#define echoPin1        2  // tank
+#define trigPin1        3  // water tank 
+#define echoPin1        2  // water tank
+#define trigPin2        5  // fish tank
+#define echoPin2        4  // fish tank
+
+//pH
+#define pHPin           a0
+
+//Oxygen
+#define oxygenPin       a2
 
 int Delay_Time = 0;
 
-int state = HIGH;      // the system currently closed
+int state = LOW;      // the system currently closed
 
 int on_reading;
 int off_reading;    
 
+#define controllable_amount 2;   //number of environment measurement that can be controlled
+/*  pos           description
+ *  0             Oxegen
+ *  1             Soil moisture
+ */
+bool lack_state[controllable_amount];
+//threshold values here
 
 void setup() {
   
@@ -35,30 +50,64 @@ void setup() {
   pinMode(Power_Air_Pump,  OUTPUT);
   pinMode(onPin,           INPUT);
   pinMode(offPin,          INPUT);
+  for(int i=0;i<controllable_amount;i++){
+    lack_state[i] = false;
+  }
 }
 
 void loop() {
 
+  //read button status
   on_reading = digitalRead(onPin);
   off_reading = digitalRead(offPin);
-  
+  //show button status
   Serial.print(state);
   Serial.print("  ");
   Serial.print(on_reading);
   Serial.print("  ");
   Serial.println(off_reading);
 
+  //read sensors
+
+  //show measured values from sensors
+
+  //check if LACK O2 flag is true
+    //upper or lower threshold
+  //check if O2 level is enough based on the flag (upper/lower threshold)
+    //set lack O2 flag
+
+  //check if LACK O2 flag is true
+    //upper or lower threshold
+  //check if O2 level is enough based on the flag (upper/lower threshold)
+    //set lack O2 flag
+
+  //write as a loop
+  for(int i = 0; i < controllable_amount ; i++){
+    //check if the flag is set
+  }
+
   if (on_reading == LOW) {                // if on_button is toggled  
-    if (state == HIGH){                   // if system is closed
-      state = LOW;                        // open the system
-      wateringPlant(true);                 // 
+    if (state == LOW){                   // if system is closed
+      state = HIGH;                        // open the system
+      //wateringPlant(true);                 // 
+      //Check LACK O2 FLAG
+      //if lack
+        //Open the air pump
+      //else
+        //Close the air pump
+      //Check LACK SOIL MOISTURE FLAG
+      //if lack
+        //Open solenoid2
+        //Open water pump
+      //else
+        //Close water pump
+        //Close solenoid2
     }
   }
   
   if (off_reading == LOW){                // if off_button is toggled
-    if (state == LOW){                    // if system is opened
-      state = HIGH;                       // close the system
-      wateringPlant(false);
+    if (state == HIGH){                    // if system is opened
+      state = LOW;                       // close the system
     }  
   }
   
@@ -75,16 +124,13 @@ void closeSystem(){
 }
 
 void wateringPlant(boolean Open){
-  if (Open){
+
     digitalWrite(Valve1, LOW);
     digitalWrite(Valve2, HIGH);
     digitalWrite(Valve3, LOW);
     delay(3000); 
     digitalWrite(Power_pump, HIGH);
     digitalWrite(Power_Air_Pump, HIGH);
-  } else {
-    closeSystem();
-  }
 }
 
 void fillWaterTank(){
