@@ -94,17 +94,7 @@ void loop() {
 
   //show measured values from sensors
 
-  //check if LACK O2 flag is true
-    //upper or lower threshold
-  //check if O2 level is enough based on the flag (upper/lower threshold)
-    //set lack O2 flag
 
-  //check if LACK O2 flag is true
-    //upper or lower threshold
-  //check if O2 level is enough based on the flag (upper/lower threshold)
-    //set lack O2 flag
-
-  //write as a loop
   float packed_value[CONTROLLABLE_AMOUNT];
   /*
    * Please assign the read values into this array
