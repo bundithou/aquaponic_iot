@@ -113,6 +113,7 @@ o2sensor::o2sensor(int pin)
 	this->o2_pin = pin;
 	pinMode(o2_pin, INPUT);
 	readDoCharacteristicValues();
+
 }
 
 float o2sensor::getO2(void) {
@@ -347,3 +348,4 @@ float ultrasonicsensor::getDistance(void)
 	Sonar(trig_pin, echo_pin);
 	return distance;
 }
+
