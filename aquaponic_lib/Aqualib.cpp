@@ -320,3 +320,31 @@ float soilMoisturesensor::getSoilMoisture(void) {
 }
 
 
+/*
+	ultrasonic
+*/
+
+ultrasonicsensor::ultrasonicsensor(int trigPin, int echoPin)
+{
+	this->trig_pin = trigPin;
+	this->echo_pin = echoPin;
+	pinMode(this->trig_pin, OUTPUT);
+	pinMode(this->echo_pin, INPUT):
+}
+
+void ultrasonicsensor::Sonar(int trigPin, int echoPin)
+{
+	digitalWrite(trigPin, LOW);
+	delayMicroseconds(2);
+	digitalWrite(trigPin, HIGH);
+	delayMicroseconds(10);
+	digitalWrite(trigPin, LOW);
+	duration = pulseIn(echoPin, HIGH);
+	distance = (duration / 2) / 29.1;
+}
+
+float ultrasonicsensor::getDistance(void)
+{
+	Sonar(trig_pin, echo_pin);
+	return distance;
+}

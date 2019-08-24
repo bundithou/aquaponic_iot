@@ -109,10 +109,14 @@ class ultrasonicsensor
 	public:
 		ultrasonicsensor(int trigPin, int echoPin);
 		float getDistance(void);
+		void Sonar(int trigPin, int echoPin);
 
 	private:
 		int trig_pin;
 		int echo_pin;
+
+		long distance;
+		long duration;
 };
 
 #endif
