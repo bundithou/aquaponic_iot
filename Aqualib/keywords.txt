@@ -1,0 +1,40 @@
+#######################################
+# Syntax Coloring Map For Aqualib
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+pHsensor		KEYWORD1
+o2sensor		KEYWORD1
+soilMoisturesensor	KEYWORD1
+ultrasonicsensor	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+calculatepH		KEYWORD2
+getpH			KEYWORD2
+getVoltage		KEYWORD2
+
+calculateO2		KEYWORD2
+getO2			KEYWORD2
+getTemperature		KEYWORD2
+getVoltage		KEYWORD2
+doCalibration		KEYWORD2
+
+getSoilMoisture		KEYWORD2
+
+getDistance		KEYWORD2
+Sonar			KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+

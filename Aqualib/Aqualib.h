@@ -12,7 +12,6 @@
 
 // include arduino function
 #include "Arduino.h"
-#include "WProgram.h"
 #include "HardwareSerial.h"
 
 class pHsensor
@@ -22,7 +21,7 @@ class pHsensor
 		/*
 			call calulatepH() at loop() before getpH() or getVoltage()
 		*/
-		void calulatepH(void);
+		void calculatepH(void);
 		float getVoltage(void);
 		float getpH(void);
 
@@ -33,12 +32,12 @@ class pHsensor
 		float Offset = 0.00;            //deviation compensate
 		int samplingInterval = 20;
 		int printInterval = 800;          // 800 millisec
-		int ArrayLenth = 40;            //times of collection
+		const static int ArrayLenth = 40;            //times of collection
 		int pHArray[ArrayLenth];                                      //Store the average value of the sensor feedback
 		int pHArrayIndex = 0;
 		static float pHValue, voltage;
 
-		double averagearray(int* arr, int number);
+		double avergearray(int* arr, int number);
 };
 
 class o2sensor
@@ -49,7 +48,7 @@ class o2sensor
 			call calulateO2() at loop() before getpH() or getVoltage()
 		*/
 		void readDoCharacteristicValues(void);
-		void calulateO2(void);
+		void calculateO2(void);
 
 		float getO2(void);
 		float getTemperature(void);
@@ -64,11 +63,11 @@ class o2sensor
 		float doValue;                                                //current dissolved oxygen value, unit; mg/L
 		float temperature = 25;                                       //default temperature is 25^C, you can use a temperature sensor to read it
 		
-		int ReceivedBufferLength = 20;
+		const static int ReceivedBufferLength = 20;
 		char receivedBuffer[ReceivedBufferLength + 1];        // store the serial command
 		byte receivedBufferIndex = 0;
 	
-		int SCOUNT = 30;          // sum of sample point
+		const static int SCOUNT = 30;          // sum of sample point
 		int analogBuffer[SCOUNT];    //store the analog value in the array, readed from ADC
 		int analogBufferTemp[SCOUNT];
 		int analogBufferIndex = 0, copyIndex = 0;
@@ -85,8 +84,7 @@ class o2sensor
 			8.25,  8.11,  7.96,  7.82,  7.69,
 			7.56,  7.43,  7.30,  7.18,  7.07,
 			6.95,  6.84,  6.73,  6.63,  6.53,
-			6.41,
-		};
+			6.41};
 
 		int getMedianNum(int bArray[], int iFilterLen);
 		byte uartParse();

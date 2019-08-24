@@ -6,13 +6,15 @@
 #define offPin          6
 
 // valves
-#define Valve1          13 // pump --> tank
-#define Valve2          12 // pump --> plant
-#define Valve3          11 // tank --> pump
+#define Valve1          12 // pump --> tank
+#define Valve2          11 // pump --> plant
+
+// temperature
+#define tempPin         10
 
 // pumps
-#define Power_pump      10
-#define Power_Air_Pump  9
+#define Power_pump      9
+#define Power_Air_Pump  8
 
 //ultrasonic
 #define trigPin1        3  // water tank 

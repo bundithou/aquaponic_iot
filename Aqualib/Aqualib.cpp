@@ -5,7 +5,6 @@
 */
 
 #include "Arduino.h"
-#include "WProgram.h"
 #include "Aqualib.h"
 
 
@@ -25,7 +24,7 @@ float pHsensor::getVoltage(void) {
 	return voltage;
 }
 
-void pHsensor::calulatepH(void)
+void pHsensor::calculatepH(void)
 {
 	static unsigned long samplingTime = millis();
 	static unsigned long printTime = millis();
@@ -143,7 +142,7 @@ void o2sensor::calculateO2(void)
 	if (millis() - tempSampleTimepoint > 500U)  // every 500 milliseconds, read the temperature
 	{
 		tempSampleTimepoint = millis();
-		temperature = readTemperature();  // add your temperature codes here to read the temperature, unit:^C
+		//temperature = readTemperature();  // add your temperature codes here to read the temperature, unit:^C
 	}
 
 	static unsigned long printTimepoint = millis();
@@ -329,7 +328,7 @@ ultrasonicsensor::ultrasonicsensor(int trigPin, int echoPin)
 	this->trig_pin = trigPin;
 	this->echo_pin = echoPin;
 	pinMode(this->trig_pin, OUTPUT);
-	pinMode(this->echo_pin, INPUT):
+	pinMode(this->echo_pin, INPUT);
 }
 
 void ultrasonicsensor::Sonar(int trigPin, int echoPin)
