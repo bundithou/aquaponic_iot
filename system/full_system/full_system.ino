@@ -1,12 +1,14 @@
 
+// Pin & threshold declaration
+
 // on/off button
 #define onPin           7
 #define offPin          6
 
 // valves
-#define Valve1          13 // pond --> tank
-#define Valve2          12 // pond --> plant
-#define Valve3          11 // tank --> pond
+#define Valve1          13 // pump --> tank
+#define Valve2          12 // pump --> plant
+#define Valve3          11 // tank --> pump
 
 // pumps
 #define Power_pump      10
@@ -17,19 +19,22 @@
 #define echoPin1        2  // water tank
 #define trigPin2        5  // fish tank
 #define echoPin2        4  // fish tank
+float top_waterlvl =    10.0;
+float low_waterlvl =    60.0;
 
 //pH
-#define pHPin           a0
+#define pHPin           A0
+#define LED             13
+float base_pH =         7.1;
+float acid_pH =         4.9;
+
+//soil moisture
+#define soilPin         A1
+float low_moisture =    30;
 
 //Oxygen
-#define oxygenPin       a2
-
-int Delay_Time = 0;
-
-int state = LOW;      // the system currently closed
-
-int on_reading;
-int off_reading;    
+#define oxygenPin       A2
+float low_O2 =          5.0;
 
 #define controllable_amount 2;   //number of environment measurement that can be controlled
 /*  pos           description
@@ -38,6 +43,22 @@ int off_reading;
  */
 bool lack_state[controllable_amount];
 //threshold values here
+int threshold_value[controllable_amount];
+
+int Delay_Time = 0;
+int state = LOW;      // the system currently closed
+
+int on_reading;
+int off_reading;  
+
+/*  
+ *  
+ *
+ *
+ */
+
+
+
 
 void setup() {
   
@@ -124,7 +145,6 @@ void closeSystem(){
 }
 
 void wateringPlant(boolean Open){
-
     digitalWrite(Valve1, LOW);
     digitalWrite(Valve2, HIGH);
     digitalWrite(Valve3, LOW);
@@ -134,18 +154,11 @@ void wateringPlant(boolean Open){
 }
 
 void fillWaterTank(){
-  
   digitalWrite(Valve1, HIGH);
   digitalWrite(Valve2, LOW);
   digitalWrite(Valve3, LOW);
   delay(3000); 
   digitalWrite(Power_pump, HIGH);
-
-  // wait till tank is full
-
-  //close
-  closeSystem();
-  
 }
 
 
@@ -153,17 +166,8 @@ void fillSoilMoisture(){
   digitalWrite(Valve1, LOW);
   digitalWrite(Valve2, LOW);
   digitalWrite(Valve3, HIGH);
-
-  // wait till soilmoisture value is better
-  delay(3000);
-  
-  //close
-  closeSystem();
-  
 }
 
 void fillOxygen(){
   digitalWrite(Power_Air_Pump, HIGH);
-
-  // wait till Oxygen value is better
 }
