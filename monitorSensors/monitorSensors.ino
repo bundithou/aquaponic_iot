@@ -7,6 +7,8 @@
 #define samplingInterval                        20
 #define printInterval                           800           // 800 millisec
 #define ArrayLenth                              40            //times of collection
+
+
 int pHArray[ArrayLenth];                                      //Store the average value of the sensor feedback
 int pHArrayIndex=0;
 
@@ -65,7 +67,7 @@ long duration, distance, PondSensor,TankSensor;
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
+  Serial.begin(115200);
 
   // ph
   pinMode(LED,OUTPUT);
@@ -73,7 +75,8 @@ void setup() {
   // oxygen
   pinMode(DoSensorPin,INPUT);
   readDoCharacteristicValues();      //read Characteristic Values calibrated from the EEPROM
-
+  //soil
+  pinMode(sensor_pin,INPUT);
   // ultrasonic
   pinMode(trigPin1, OUTPUT);
   pinMode(echoPin1, INPUT);
