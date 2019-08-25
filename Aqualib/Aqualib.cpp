@@ -108,11 +108,22 @@ double pHsensor::avergearray(int* arr, int number) {
 /*
 oxygen sensor function
 */
-o2sensor::o2sensor(int pin)
+//o2sensor::o2sensor(int pin)
+//{
+//	this->o2_pin = pin;
+//	pinMode(o2_pin, INPUT);
+//	readDoCharacteristicValues();
+//	tempsensor = temperaturesensor();
+//}
+
+o2sensor::o2sensor(int pin, OneWire* onewire)
 {
 	this->o2_pin = pin;
 	pinMode(o2_pin, INPUT);
 	readDoCharacteristicValues();
+
+	this->temp_check = true;
+	tempsensor = new temperaturesensor(onewire);
 }
 
 float o2sensor::getO2(void) {
@@ -142,7 +153,9 @@ void o2sensor::calculateO2(void)
 	if (millis() - tempSampleTimepoint > 500U)  // every 500 milliseconds, read the temperature
 	{
 		tempSampleTimepoint = millis();
-		//temperature = readTemperature();  // add your temperature codes here to read the temperature, unit:^C
+		if (temp_check) {
+			temperature = tempsensor->getTemperature();// add your temperature codes here to read the temperature, unit:^C
+		}
 	}
 
 	static unsigned long printTimepoint = millis();
@@ -346,4 +359,34 @@ float ultrasonicsensor::getDistance(void)
 {
 	Sonar(trig_pin, echo_pin);
 	return distance;
+}
+
+// temperature
+#include <OneWire.h>
+#include <DallasTemperature.h>
+/*
+	temperature
+	by dallastemperature library
+*/
+
+temperaturesensor::temperaturesensor(OneWire* onewire)
+{
+	//this->temppin = pin;
+	//this->oneWire = OneWire(pin);
+	//oneWire = onewire;
+	this->tempsensors = new DallasTemperature(onewire);
+	tempsensors->begin();
+}
+
+float temperaturesensor::getTemperature(void)
+{
+	if (this->check_null) {
+		return temperatureValue;
+	}
+	else {
+		tempsensors->requestTemperatures(); // Send the command to get temperatures
+		temperatureValue = tempsensors->getTempCByIndex(0);
+		return temperatureValue;
+	}
+
 }

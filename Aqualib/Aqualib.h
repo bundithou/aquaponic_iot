@@ -14,6 +14,24 @@
 #include "Arduino.h"
 #include "HardwareSerial.h"
 
+// temperature
+#include <OneWire.h>
+#include <DallasTemperature.h>
+//OneWire oneWire;
+class temperaturesensor
+{
+public:
+	temperaturesensor(OneWire* onewire);
+	float getTemperature(void);
+	float temperatureValue = 25; // default = 25^C
+
+private:
+	int temppin;
+	bool check_null = false;
+	//static OneWire oneWire = OneWire(13);&oneWire
+	DallasTemperature* tempsensors;
+};
+
 class pHsensor
 {
 	public:
@@ -35,15 +53,31 @@ class pHsensor
 		const static int ArrayLenth = 40;            //times of collection
 		int pHArray[ArrayLenth];                                      //Store the average value of the sensor feedback
 		int pHArrayIndex = 0;
-		static float pHValue, voltage;
+		float pHValue;
+		float voltage;
 
 		double avergearray(int* arr, int number);
 };
 
+//saturation dissolved oxygen concentrations at various temperatures
+const PROGMEM float SaturationValueTab[] = {
+	14.46, 14.22, 13.82, 13.44, 13.09,
+	12.74, 12.42, 12.11, 11.81, 11.53,
+	11.26, 11.01, 10.77, 10.53, 10.30,
+	10.08, 9.86,  9.66,  9.46,  9.27,
+	9.08,  8.90,  8.73,  8.57,  8.41,
+	7.56,  7.43,  7.30,  7.18,  7.07,
+	6.95,  6.84,  6.73,  6.63,  6.53,
+	6.41,
+};
+
 class o2sensor
 {
+
+
 	public:
-		o2sensor(int pin);
+		//o2sensor(int pin);
+		o2sensor(int pin, OneWire* onewire);
 		/*
 			call calulateO2() at loop() before getpH() or getVoltage()
 		*/
@@ -75,20 +109,12 @@ class o2sensor
 		float SaturationDoVoltage, SaturationDoTemperature;
 		float averageVoltage;
 
-		const float SaturationValueTab[41] PROGMEM = {      //saturation dissolved oxygen concentrations at various temperatures
-			14.46, 14.22, 13.82, 13.44, 13.09,
-			12.74, 12.42, 12.11, 11.81, 11.53,
-			11.26, 11.01, 10.77, 10.53, 10.30,
-			10.08, 9.86,  9.66,  9.46,  9.27,
-			9.08,  8.90,  8.73,  8.57,  8.41,
-			8.25,  8.11,  7.96,  7.82,  7.69,
-			7.56,  7.43,  7.30,  7.18,  7.07,
-			6.95,  6.84,  6.73,  6.63,  6.53,
-			6.41};
-
 		int getMedianNum(int bArray[], int iFilterLen);
 		byte uartParse();
 		boolean serialDataAvailable(void);
+
+		bool temp_check = false;
+		temperaturesensor* tempsensor;
 };
 
 class soilMoisturesensor
@@ -116,6 +142,8 @@ class ultrasonicsensor
 		long distance;
 		long duration;
 };
+
+
 
 #endif
 
