@@ -1,8 +1,4 @@
 #include <Aqualib.h>
-#include <OneWire.h>
-
-#define onewirebus 8
-OneWire oneWire(onewirebus);
 
 // ph sensor
 #define phpin   A0  
@@ -18,12 +14,15 @@ OneWire oneWire(onewirebus);
 #define trigpin 12
 #define echopin 11
 
+// temperature
+#define temppin 8
+
 // call instances
 pHsensor pH(phpin, LED);
-o2sensor o2(o2pin, &oneWire);
+o2sensor o2(o2pin, temppin); // o2sensor o2(o2pin); if no temperature pin
 soilMoisturesensor soilMoisture(soilpin);
 ultrasonicsensor ultrasonic(trigpin, echopin);
-
+temperaturesensor temperature(temppin);
 
 void setup() {
   // put your setup code here, to run once:
@@ -37,8 +36,11 @@ void loop() {
   // calculate sensors before getting the value
   pH.calculatepH();
   o2.calculateO2();
-
+  
   // monitor sensors
+  Serial.print("temperature value: ");
+  Serial.print(temperature.getTemperature());
+  Serial.print(" -- ");
   Serial.print("pH value: ");
   Serial.print(pH.getpH());
   Serial.print(" -- ");
