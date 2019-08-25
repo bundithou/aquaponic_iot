@@ -108,22 +108,22 @@ double pHsensor::avergearray(int* arr, int number) {
 /*
 oxygen sensor function
 */
-//o2sensor::o2sensor(int pin)
-//{
-//	this->o2_pin = pin;
-//	pinMode(o2_pin, INPUT);
-//	readDoCharacteristicValues();
-//	tempsensor = temperaturesensor();
-//}
+o2sensor::o2sensor(int pin)
+{
+	this->o2_pin = pin;
+	pinMode(o2_pin, INPUT);
+	readDoCharacteristicValues();
+	tempsensor = nullptr;
+}
 
-o2sensor::o2sensor(int pin, OneWire* onewire)
+o2sensor::o2sensor(int pin, int temppin)
 {
 	this->o2_pin = pin;
 	pinMode(o2_pin, INPUT);
 	readDoCharacteristicValues();
 
 	this->temp_check = true;
-	tempsensor = new temperaturesensor(onewire);
+	tempsensor = new temperaturesensor(temppin);
 }
 
 float o2sensor::getO2(void) {
@@ -369,12 +369,11 @@ float ultrasonicsensor::getDistance(void)
 	by dallastemperature library
 */
 
-temperaturesensor::temperaturesensor(OneWire* onewire)
+temperaturesensor::temperaturesensor(int pin)
 {
-	//this->temppin = pin;
-	//this->oneWire = OneWire(pin);
-	//oneWire = onewire;
-	this->tempsensors = new DallasTemperature(onewire);
+	this->temppin = pin;
+	this->oneWire = new OneWire(pin);
+	this->tempsensors = new DallasTemperature(oneWire);
 	tempsensors->begin();
 }
 

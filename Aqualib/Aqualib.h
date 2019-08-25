@@ -21,14 +21,14 @@
 class temperaturesensor
 {
 public:
-	temperaturesensor(OneWire* onewire);
+	temperaturesensor(int pin);
 	float getTemperature(void);
 	float temperatureValue = 25; // default = 25^C
 
 private:
 	int temppin;
 	bool check_null = false;
-	//static OneWire oneWire = OneWire(13);&oneWire
+	OneWire* oneWire;
 	DallasTemperature* tempsensors;
 };
 
@@ -76,8 +76,8 @@ class o2sensor
 
 
 	public:
-		//o2sensor(int pin);
-		o2sensor(int pin, OneWire* onewire);
+		o2sensor(int pin);
+		o2sensor(int pin, int temppin);
 		/*
 			call calulateO2() at loop() before getpH() or getVoltage()
 		*/
