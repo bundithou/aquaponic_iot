@@ -14,6 +14,23 @@
 #include "Arduino.h"
 #include "HardwareSerial.h"
 
+// temperature
+#include <OneWire.h>
+#include <DallasTemperature.h>
+//OneWire oneWire;
+class temperaturesensor
+{
+public:
+	temperaturesensor(OneWire* onewire);
+	float getTemperature(void);
+	float temperatureValue = 25; // default = 25^C
+
+private:
+	int temppin;
+	bool check_null = false;
+	//static OneWire oneWire = OneWire(13);&oneWire
+	DallasTemperature* tempsensors;
+};
 
 class pHsensor
 {
@@ -59,7 +76,8 @@ class o2sensor
 
 
 	public:
-		o2sensor(int pin);
+		//o2sensor(int pin);
+		o2sensor(int pin, OneWire* onewire);
 		/*
 			call calulateO2() at loop() before getpH() or getVoltage()
 		*/
@@ -94,6 +112,9 @@ class o2sensor
 		int getMedianNum(int bArray[], int iFilterLen);
 		byte uartParse();
 		boolean serialDataAvailable(void);
+
+		bool temp_check = false;
+		temperaturesensor* tempsensor;
 };
 
 class soilMoisturesensor
@@ -121,6 +142,8 @@ class ultrasonicsensor
 		long distance;
 		long duration;
 };
+
+
 
 #endif
 

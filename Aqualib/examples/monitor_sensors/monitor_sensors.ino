@@ -1,4 +1,8 @@
 #include <Aqualib.h>
+#include <OneWire.h>
+
+#define onewirebus 8
+OneWire oneWire(onewirebus);
 
 // ph sensor
 #define phpin   A0  
@@ -16,9 +20,10 @@
 
 // call instances
 pHsensor pH(phpin, LED);
-o2sensor o2(o2pin);
+o2sensor o2(o2pin, &oneWire);
 soilMoisturesensor soilMoisture(soilpin);
 ultrasonicsensor ultrasonic(trigpin, echopin);
+
 
 void setup() {
   // put your setup code here, to run once:
