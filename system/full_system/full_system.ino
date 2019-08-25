@@ -1,3 +1,4 @@
+#include <Aqualib.h>
 
 // Pin & threshold declaration
 
@@ -32,20 +33,22 @@ float acid_pH =         4.9;
 
 //soil moisture
 #define soilPin         A1
-float low_moisture =    30;
+float lower_moisture =    30;
+float upper_moisture =    30;
 
 //Oxygen
 #define oxygenPin       A2
-float low_O2 =          5.0;
+float lower_O2 =          5.0;
+float upper_O2 =          5.0;
 
-#define CONTROLLABLE_AMOUNT 2;   //number of environment measurement that can be controlled
+const int CONTROLLABLE_AMOUNT = 2;   //number of environment measurement that can be controlled
 /*  pos           description
  *  0             Oxygen
  *  1             Soil moisture
  */
 bool lack_state[CONTROLLABLE_AMOUNT];
 //**** threshold_value [controller index] [lower/upper index (0 for lower, 1 for upper)]
-int threshold_value[CONTROLLABLE_AMOUNT][2] = {};   //threshold values here
+float threshold_value[CONTROLLABLE_AMOUNT][2];
 
 int Delay_Time = 0;
 int state = LOW;      // the system currently closed
@@ -59,8 +62,11 @@ int off_reading;
  *
  */
 
-
-
+pHsensor pH(pHPin, LED);
+o2sensor o2(oxygenPin);
+soilMoisturesensor soilMoisture(soilPin);
+ultrasonicsensor ultrasonicWaterTank(trigPin1, echoPin1);
+ultrasonicsensor ultrasonicFishTank(trigPin2, echoPin2);
 
 void setup() {
   
@@ -68,7 +74,7 @@ void setup() {
   Serial.println("Booting");
   pinMode(Valve1,          OUTPUT);
   pinMode(Valve2,          OUTPUT);
-  pinMode(Valve3,          OUTPUT);
+  //pinMode(Valve3,          OUTPUT);
   pinMode(Power_pump,      OUTPUT);
   pinMode(Power_Air_Pump,  OUTPUT);
   pinMode(onPin,           INPUT);
@@ -76,6 +82,11 @@ void setup() {
   for(int i=0;i<CONTROLLABLE_AMOUNT;i++){
     lack_state[i] = false;
   }
+  
+  threshold_value[0][0] = lower_O2;
+  threshold_value[0][1] = upper_O2;
+  threshold_value[1][0] = lower_moisture;
+  threshold_value[1][1] = upper_moisture;
 }
 
 void loop() {
@@ -90,18 +101,45 @@ void loop() {
   Serial.print("  ");
   Serial.println(off_reading);
 
-  //read sensors
+  // calculate sensors before getting the value
+  pH.calculatepH();
+  o2.calculateO2();
 
-  //show measured values from sensors
+  float loop_pH = pH.getpH();
+  float loop_O2 = o2.getO2();
+  float loop_soilMoisture = soilMoisture.getSoilMoisture();
+  float loop_ultra_water_tank = ultrasonicWaterTank.getDistance();
+  float loop_ultra_fish_tank = ultrasonicFishTank.getDistance();
+
+  // monitor sensors
+  Serial.print("pH value: ");
+  Serial.print(loop_pH);
+  Serial.print(" -- ");
+  Serial.print("O2 value: ");
+  Serial.print(loop_O2);
+  Serial.print(" -- ");
+  Serial.print("soil moisture value: ");
+  Serial.print(loop_soilMoisture);
+  Serial.print(" -- ");
+  Serial.print("water tank ultrasonic value: ");
+  Serial.print(loop_ultra_water_tank);
+  Serial.print(" -- ");
+  Serial.print("fish tank ultrasonic value: ");
+  Serial.println(loop_ultra_fish_tank);
 
 
   float packed_value[CONTROLLABLE_AMOUNT];
   /*
    * Please assign the read values into this array
    * The order should follow the index in line (around) 40
+   * Note: in final code (or in case that there is not enough memory)
+   * the read values from sensors can be assigned into this array directly.
    */
+  packed_value[0] = loop_O2;
+  packed_value[1] = loop_soilMoisture;
+  
   for(int i = 0; i < CONTROLLABLE_AMOUNT ; i++){
-    int threshold = threshold_value[i][(lack_state[i]) ? 0 : 1];
+    float threshold = threshold_value[i][(lack_state[i]) ? 0 : 1];
     //compare value from sensors, this comparison can be written in switch-cases manner or just an array index looping
     //I do prefer array index loop though. - Lee
     lack_state[i] = (packed_value[i] < threshold) ? true : false;
@@ -147,42 +185,5 @@ void loop() {
     }  
   }
   
-  delay(500);                             // wait for half a second
-}
-
-void closeSystem(){
-  digitalWrite(Power_pump, LOW);
-  digitalWrite(Power_Air_Pump, LOW);
-  delay(3000); 
-  digitalWrite(Valve1, LOW);
-  digitalWrite(Valve2, LOW);
-  digitalWrite(Valve3, LOW);
-}
-
-void wateringPlant(boolean Open){
-    digitalWrite(Valve1, LOW);
-    digitalWrite(Valve2, HIGH);
-    digitalWrite(Valve3, LOW);
-    delay(3000); 
-    digitalWrite(Power_pump, HIGH);
-    digitalWrite(Power_Air_Pump, HIGH);
-}
-
-void fillWaterTank(){
-  digitalWrite(Valve1, HIGH);
-  digitalWrite(Valve2, LOW);
-  digitalWrite(Valve3, LOW);
-  delay(3000); 
-  digitalWrite(Power_pump, HIGH);
-}
-
-
-void fillSoilMoisture(){
-  digitalWrite(Valve1, LOW);
-  digitalWrite(Valve2, LOW);
-  digitalWrite(Valve3, HIGH);
-}
-
-void fillOxygen(){
-  digitalWrite(Power_Air_Pump, HIGH);
+  delay(500);                             // wait for half a second before next loop
 }
