@@ -33,13 +33,13 @@ float acid_pH =         4.9;
 
 //soil moisture
 #define soilPin         A1
-float lower_moisture =    30;
-float upper_moisture =    30;
+float lower_moisture =    50;
+float upper_moisture =    90;
 
 //Oxygen
 #define oxygenPin       A2
 float lower_O2 =          4.0;
-float upper_O2 =          4.5;
+float upper_O2 =          5.0;
 
 const int CONTROLLABLE_AMOUNT = 2;   //number of environment measurement that can be controlled
 /*  pos           description
