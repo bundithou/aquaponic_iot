@@ -38,8 +38,8 @@ float upper_moisture =    30;
 
 //Oxygen
 #define oxygenPin       A2
-float lower_O2 =          5.0;
-float upper_O2 =          5.0;
+float lower_O2 =          4.0;
+float upper_O2 =          4.5;
 
 const int CONTROLLABLE_AMOUNT = 2;   //number of environment measurement that can be controlled
 /*  pos           description
@@ -47,6 +47,7 @@ const int CONTROLLABLE_AMOUNT = 2;   //number of environment measurement that ca
  *  1             Soil moisture
  */
 bool lack_state[CONTROLLABLE_AMOUNT];
+bool lack_working[CONTROLLABLE_AMOUNT];
 //**** threshold_value [controller index] [lower/upper index (0 for lower, 1 for upper)]
 float threshold_value[CONTROLLABLE_AMOUNT][2];
 
@@ -81,6 +82,7 @@ void setup() {
   pinMode(offPin,          INPUT);
   for(int i=0;i<CONTROLLABLE_AMOUNT;i++){
     lack_state[i] = false;
+    lack_working[i] = false;
   }
   
   threshold_value[0][0] = lower_O2;
@@ -139,7 +141,7 @@ void loop() {
   packed_value[1] = loop_soilMoisture;
   
   for(int i = 0; i < CONTROLLABLE_AMOUNT ; i++){
-    float threshold = threshold_value[i][(lack_state[i]) ? 0 : 1];
+    float threshold = threshold_value[i][(lack_working[i]) ? 0 : 1];
     //compare value from sensors, this comparison can be written in switch-cases manner or just an array index looping
     //I do prefer array index loop though. - Lee
     lack_state[i] = (packed_value[i] < threshold) ? true : false;
@@ -148,42 +150,61 @@ void loop() {
   if (on_reading == LOW) {                // if on_button is toggled  
     if (state == LOW){                   // if system is closed
       state = HIGH;                        // open the system
-      for(int i=0;i<CONTROLLABLE_AMOUNT;i++){
-        if(lack_state[i]){
-          switch(i){ //if lack
-            case 0: //Oxygen
-              digitalWrite(Power_Air_Pump, HIGH); //open air pump
-              break;
-            case 1: //soil moisture
-              digitalWrite(Valve2, HIGH); //open solenoid2
-              delay(1000);
-              digitalWrite(Power_pump, HIGH); //open water pump
-              break;
-            default: Serial.print("stop the system as soon as possible and check the amount of controllable stuffs and the number of cases");
-          }
-        }
-        else{
-          switch(i){ //if lack
-            case 0: //Oxygen
-              digitalWrite(Power_Air_Pump, LOW); //close air pump
-              break;
-            case 1: //soil moisture
-              digitalWrite(Power_pump, LOW); //close water pump
-              delay(1000);
-              digitalWrite(Valve2, LOW); // close solenoid
-              break;
-            default: Serial.print("stop the system as soon as possible and check the amount of controllable stuffs and the number of cases");
-          }
-        }
-      }
     }
   }
   
   if (off_reading == LOW){                // if off_button is toggled
     if (state == HIGH){                    // if system is opened
       state = LOW;                       // close the system
+      stopAndResetControllSystem();
     }  
+  }
+
+  if(state == HIGH){
+    for(int i=0;i<CONTROLLABLE_AMOUNT;i++){
+      if(lack_state[i]){
+        switch(i){ //if lack
+          case 0: //Oxygen
+            digitalWrite(Power_Air_Pump, HIGH); //open air pump
+            lack_working[0] = true;
+            break;
+          case 1: //soil moisture
+            digitalWrite(Valve2, HIGH); //open solenoid2
+            delay(1000);
+            digitalWrite(Power_pump, HIGH); //open water pump
+            lack_working[1] = true;
+            break;
+          default: Serial.print("stop the system as soon as possible and check the amount of controllable stuffs and the number of cases");
+        }
+      }
+      else{
+        switch(i){ //if enough
+          case 0: //Oxygen
+            digitalWrite(Power_Air_Pump, LOW); //close air pump
+            lack_working[0] = false;
+            break;
+          case 1: //soil moisture
+            digitalWrite(Power_pump, LOW); //close water pump
+            delay(1000);
+            digitalWrite(Valve2, LOW); // close solenoid
+            lack_working[1] = false;
+            break;
+          default: Serial.print("stop the system as soon as possible and check the amount of controllable stuffs and the number of cases");
+        }
+      }
+    }
   }
   
   delay(500);                             // wait for half a second before next loop
+}
+
+void stopAndResetControllSystem(){
+  digitalWrite(Power_Air_Pump, LOW); //close air pump
+  digitalWrite(Power_pump, LOW); //close water pump
+  delay(1000);
+  digitalWrite(Valve2, LOW); // close solenoid
+  for(int i=0;i<CONTROLLABLE_AMOUNT;i++){
+    lack_state[i] = false;
+    lack_working[i] = false;
+  }
 }
