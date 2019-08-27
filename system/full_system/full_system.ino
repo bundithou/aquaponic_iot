@@ -65,6 +65,7 @@ int off_reading;
 
 pHsensor pH(pHPin, LED);
 o2sensor o2(oxygenPin);
+//o2sensor o2(oxygenPin, tempPin); //for when temperature probe is connected
 soilMoisturesensor soilMoisture(soilPin);
 ultrasonicsensor ultrasonicWaterTank(trigPin1, echoPin1);
 ultrasonicsensor ultrasonicFishTank(trigPin2, echoPin2);
@@ -108,6 +109,7 @@ void loop() {
   o2.calculateO2();
 
   float loop_pH = pH.getpH();
+  //float loop_temperature = o2.getTemperature();
   float loop_O2 = o2.getO2();
   float loop_soilMoisture = soilMoisture.getSoilMoisture();
   float loop_ultra_water_tank = ultrasonicWaterTank.getDistance();
@@ -120,6 +122,9 @@ void loop() {
   Serial.print("O2 value: ");
   Serial.print(loop_O2);
   Serial.print(" -- ");
+//  Serial.print("Temperature value (C): ");
+//  Serial.print(loop_O2);
+//  Serial.print(" -- ");
   Serial.print("soil moisture value: ");
   Serial.print(loop_soilMoisture);
   Serial.print(" -- ");
