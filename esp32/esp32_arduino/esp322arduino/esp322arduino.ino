@@ -10,7 +10,7 @@ void setup() {
 void loop() {
   String d = "";
  if (sw.available() > 0) {
-   Serial.println("receive: ");
+   //Serial.println("receive: ");
    char bfr[501];
    memset(bfr,0, 501);
    sw.readBytesUntil( '\n',bfr,500);
