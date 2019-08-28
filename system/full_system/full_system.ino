@@ -146,7 +146,7 @@ void loop() {
   packed_value[1] = loop_soilMoisture;
   
   for(int i = 0; i < CONTROLLABLE_AMOUNT ; i++){
-    float threshold = threshold_value[i][(lack_working[i]) ? 0 : 1];
+    float threshold = threshold_value[i][(lack_working[i]) ? 1 : 0];
     //compare value from sensors, this comparison can be written in switch-cases manner or just an array index looping
     //I do prefer array index loop though. - Lee
     lack_state[i] = (packed_value[i] < threshold) ? true : false;
