@@ -1,0 +1,45 @@
+--location table
+
+CREATE TABLE location(
+ id INT NOT NULL AUTO_INCREMENT,
+ name VARCHAR(20) NOT NULL,
+ description VARCHAR(256),
+ PRIMARY KEY(id)
+);
+
+--equipment_desc table
+
+CREATE TABLE equipment_desc(
+ id INT NOT NULL AUTO_INCREMENT,
+ name VARCHAR(20) NOT NULL,
+ description VARCHAR(256),
+ location_id INT,
+ type CHAR(3) NOT NULL,
+ PRIMARY KEY(id),
+ FOREIGN KEY(location_id) REFERENCES location(id)
+);
+
+--actuator table
+
+CREATE TABLE actuator(
+ id INT NOT NULL,
+ mcu_id INT NOT NULL,
+ status TINYINT(1) NOT NULL,
+ timestamp DATETIME NOT NULL,
+ PRIMARY KEY(id),
+ FOREIGN KEY(id) REFERENCES equipment_desc(id),
+ FOREIGN KEY(mcu_id) REFERENCES equipment_desc(id)
+);
+
+--sensor_value table
+
+CREATE TABLE sensor(
+ id INT NOT NULL AUTO_INCREMENT,
+ mcu_id INT NOT NULL,
+ sensor_id INT NOT NULL,
+ value float NOT NULL,
+ timestamp DATETIME NOT NULL,
+ PRIMARY KEY(id),
+ FOREIGN KEY(mcu_id) REFERENCES equipment_desc(id),
+ FOREIGN KEY(sensor_id) REFERENCES equipment_desc(id)
+);
