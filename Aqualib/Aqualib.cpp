@@ -113,31 +113,31 @@ o2sensor::o2sensor(int pin)
 	this->o2_pin = pin;
 	pinMode(o2_pin, INPUT);
 	readDoCharacteristicValues();
-	tempsensor = nullptr;
+	//tempsensor = nullptr;
 }
 
-o2sensor::o2sensor(int pin, int temppin)
-{
-	this->o2_pin = pin;
-	pinMode(o2_pin, INPUT);
-	readDoCharacteristicValues();
-
-	this->temp_check = true;
-	tempsensor = new temperaturesensor(temppin);
-}
+//o2sensor::o2sensor(int pin, int temppin)
+//{
+//	this->o2_pin = pin;
+//	pinMode(o2_pin, INPUT);
+//	readDoCharacteristicValues();
+//
+//	//this->temp_check = true;
+//	//tempsensor = new temperaturesensor(temppin);
+//}
 
 float o2sensor::getO2(void) {
 	return doValue;
 }
 
-float o2sensor::getTemperature(void) {
-	return temperature;
-}
+//float o2sensor::getTemperature(void) {
+//	return temperature;
+//}
 float o2sensor::getVoltage(void) {
 	return averageVoltage;
 }
 
-void o2sensor::calculateO2(void)
+void o2sensor::calculateO2(float tempValue = 25)
 {
 	static unsigned long analogSampleTimepoint = millis();
 	if (millis() - analogSampleTimepoint > 30U)     //every 30 milliseconds,read the analog value from the ADC
@@ -153,9 +153,10 @@ void o2sensor::calculateO2(void)
 	if (millis() - tempSampleTimepoint > 500U)  // every 500 milliseconds, read the temperature
 	{
 		tempSampleTimepoint = millis();
-		if (temp_check) {
-			temperature = tempsensor->getTemperature();// add your temperature codes here to read the temperature, unit:^C
-		}
+		//if (temp_check) {
+		//	temperature = tempsensor->getTemperature();// add your temperature codes here to read the temperature, unit:^C
+		//}
+		temperature = tempvalue;
 	}
 
 	static unsigned long printTimepoint = millis();

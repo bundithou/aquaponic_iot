@@ -77,15 +77,15 @@ class o2sensor
 
 	public:
 		o2sensor(int pin);
-		o2sensor(int pin, int temppin);
+		//o2sensor(int pin, int temppin);
 		/*
 			call calulateO2() at loop() before getpH() or getVoltage()
 		*/
 		void readDoCharacteristicValues(void);
-		void calculateO2(void);
+		void calculateO2(float tempValue);
 
 		float getO2(void);
-		float getTemperature(void);
+		//float getTemperature(void);
 		float getVoltage(void);
 
 		void doCalibration(byte mode);
@@ -113,8 +113,8 @@ class o2sensor
 		byte uartParse();
 		boolean serialDataAvailable(void);
 
-		bool temp_check = false;
-		temperaturesensor* tempsensor;
+		//bool temp_check = false;
+		//temperaturesensor* tempsensor;
 };
 
 class soilMoisturesensor
