@@ -347,7 +347,7 @@ ultrasonicsensor::ultrasonicsensor(int trigPin, int echoPin)
 void ultrasonicsensor::Sonar(int trigPin, int echoPin)
 {
 	digitalWrite(trigPin, LOW);
-	delayMicroseconds(2);
+	delayMicroseconds(5);
 	digitalWrite(trigPin, HIGH);
 	delayMicroseconds(10);
 	digitalWrite(trigPin, LOW);

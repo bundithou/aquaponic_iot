@@ -1,7 +1,7 @@
-#define trigPin1  7   //2
-#define echoPin1  6   //3
-#define trigPin2  5   //4 
-#define echoPin2  4   //5
+#define trigPin1  5   //2
+#define echoPin1  4   //3
+#define trigPin2  3   //4 
+#define echoPin2  2   //5
 
 
 long duration, distance, PondSensor,TankSensor;
