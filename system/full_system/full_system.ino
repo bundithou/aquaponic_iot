@@ -66,6 +66,7 @@ int off_reading;
 pHsensor pH(pHPin, LED);
 //o2sensor o2(oxygenPin);
 o2sensor o2(oxygenPin, tempPin); //for when temperature probe is connected
+//temperaturesensor temperatureSensor(tempPin);
 soilMoisturesensor soilMoisture(soilPin);
 ultrasonicsensor ultrasonicWaterTank(trigPin1, echoPin1);
 ultrasonicsensor ultrasonicFishTank(trigPin2, echoPin2);
@@ -133,6 +134,18 @@ void loop() {
   Serial.print(" -- ");
   Serial.print("fish tank ultrasonic value: ");
   Serial.println(loop_ultra_fish_tank);
+  Serial.print("Solenoid#1: ");
+  Serial.print(false);
+  Serial.print(" -- ");
+  Serial.print("Solenoid#2: ");
+  Serial.print(lack_working[1]);
+  Serial.print(" -- ");
+  Serial.print("Water pump: ");
+  Serial.print(lack_working[1]);
+  Serial.print(" -- ");
+  Serial.print("Air pump: ");
+  Serial.print(lack_working[0]);
+  Serial.println(" -- ");
 
 
   float packed_value[CONTROLLABLE_AMOUNT];
