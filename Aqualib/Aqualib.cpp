@@ -156,7 +156,7 @@ void o2sensor::calculateO2(float tempValue = 25)
 		//if (temp_check) {
 		//	temperature = tempsensor->getTemperature();// add your temperature codes here to read the temperature, unit:^C
 		//}
-		temperature = tempvalue;
+		temperature = tempValue;
 	}
 
 	static unsigned long printTimepoint = millis();

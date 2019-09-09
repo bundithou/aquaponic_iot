@@ -82,7 +82,7 @@ class o2sensor
 			call calulateO2() at loop() before getpH() or getVoltage()
 		*/
 		void readDoCharacteristicValues(void);
-		void calculateO2(float tempValue);
+		void calculateO2(float tempValue=25);
 
 		float getO2(void);
 		//float getTemperature(void);
