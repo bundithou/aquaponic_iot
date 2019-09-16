@@ -23,7 +23,7 @@
 #define trigPin2        5  // fish tank
 #define echoPin2        4  // fish tank
 float top_waterlvl =    10.0;
-float low_waterlvl =    60.0;
+float low_waterlvl =    90.0;
 
 //pH
 #define pHPin           A0
@@ -47,6 +47,7 @@ const int CONTROLLABLE_AMOUNT = 2;   //number of environment measurement that ca
  *  1             Soil moisture
  */
 bool lack_state[CONTROLLABLE_AMOUNT];
+bool lack_fish_tank_water;
 bool lack_working[CONTROLLABLE_AMOUNT];
 //**** threshold_value [controller index] [lower/upper index (0 for lower, 1 for upper)]
 float threshold_value[CONTROLLABLE_AMOUNT][2];
@@ -164,6 +165,13 @@ void loop() {
     //I do prefer array index loop though. - Lee
     lack_state[i] = (packed_value[i] < threshold) ? true : false;
   }
+  //EXTRA: Preventing the pump from pumping out water when the fish tank does not have enough water
+  if(loop_ultra_fish_tank < low_waterlvl){
+    lack_fish_tank_water = true;
+  }
+  else{
+    lack_fish_tank_water = false;
+  }
 
   if (on_reading == LOW) {                // if on_button is toggled  
     if (state == LOW){                   // if system is closed
@@ -187,6 +195,12 @@ void loop() {
             lack_working[0] = true;
             break;
           case 1: //soil moisture
+            if(lack_fish_tank_water){
+              digitalWrite(Power_pump, LOW);
+              delay(1000);
+              digitalWrite(Valve2, LOW);
+              break;
+            }
             digitalWrite(Valve2, HIGH); //open solenoid2
             delay(1000);
             digitalWrite(Power_pump, HIGH); //open water pump
