@@ -7,7 +7,7 @@
  ** MOSI - pin 11
  ** MISO - pin 12
  ** CLK - pin 13
- ** CS - pin 10 (for MKRZero SD: SDCARD_SS_PIN)
+ ** CS - pin 4 (for MKRZero SD: SDCARD_SS_PIN)
 
  created   Nov 2010
  by David A. Mellis
@@ -43,7 +43,7 @@ float lower_moisture = 50;
 float accFishTankDistance = 0; //accumulate values for later average in each second
 
 //pump
-#define Power_Air_Pump  8
+//#define Power_Air_Pump  8
 #define Power_Pump 9
 
 bool flag_on = false;
@@ -60,8 +60,7 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.print("Initializing SD card...");
-  pinMode(Power_Air_Pump,  OUTPUT);
-  digitalWrite(Power_Air_Pump, HIGH);
+  //pinMode(Power_Air_Pump,  OUTPUT);
   pinMode(Power_Pump, OUTPUT);
   if (!SD.begin(10)) {
     Serial.println("initialization failed!");
@@ -71,7 +70,7 @@ void setup() {
 
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
-  myFile = SD.open("TEST_RH.TXT", FILE_WRITE);
+  myFile = SD.open("test_moisture.txt", FILE_WRITE);
 
   // if the file opened okay, write to it:
   if (myFile) {
@@ -82,13 +81,13 @@ void setup() {
     Serial.println("done.");
   } else {
     // if the file didn't open, print an error:
-    Serial.println("error opening test1.txt");
+    Serial.println("error opening test.txt");
   }
 
   // re-open the file for reading:
-  myFile = SD.open("TEST_RH.TXT");
+  myFile = SD.open("test_moisture.txt");
   if (myFile) {
-    Serial.println("TEST_RH.TXT:");
+    Serial.println("test_moisture.txt:");
 
     // read from the file until there's nothing else in it:
     while (myFile.available()) {
@@ -98,7 +97,7 @@ void setup() {
     myFile.close();
   } else {
     // if the file didn't open, print an error:
-    Serial.println("error opening test2.txt");
+    Serial.println("error opening test.txt");
   }
 
   t = millis();
@@ -119,7 +118,7 @@ void loop() {
     accSoilMoisture = 0;
     
     sec_p++;
-    if(sec_p >= 60){
+    if(sec_p > 60){
       sec_p=0;
       min_p++;
       if (flag_on){
@@ -131,7 +130,7 @@ void loop() {
       }
     }
 
-    myFile = SD.open("TEST_RH.TXT", FILE_WRITE);
+    myFile = SD.open("test_moisture.txt", FILE_WRITE);
     // put your main code here, to run repeatedly:
     // if the file opened okay, write to it:
     if (myFile) {
@@ -148,13 +147,13 @@ void loop() {
       Serial.print(":");
       Serial.print(sec_p);
       Serial.print(",");
-      Serial.print(soilMoisture.getSoilMoisture());
+      Serial.print(avgSoilMoisture);
       Serial.print(",");
-      Serial.print(ultrasonicFishTank.getDistance());
+      Serial.print(avgFishTankDistance);
       Serial.println("");
     } else {
       // if the file didn't open, print an error:
-      Serial.println("error opening test3.txt");
+      Serial.println("error opening test.txt");
     }
   }
 }
