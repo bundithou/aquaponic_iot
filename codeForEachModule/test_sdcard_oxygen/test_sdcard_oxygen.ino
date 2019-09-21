@@ -27,6 +27,8 @@ int sec_p = 0;
 
 // oxygen sensor
 #define o2pin   A2
+float o2upperBound = 4.0;
+float o2lowerBound = 1.5;
 
 // temperature
 //#define temppin 10
@@ -36,7 +38,9 @@ int sec_p = 0;
 
 bool flag_on = false;
 
-float t = 0;
+int t = 0;
+int acc = 0;
+float accO2 = 0;
 
 o2sensor o2(o2pin);
 //temperaturesensor temperature(temppin);
@@ -91,14 +95,19 @@ void loop() {
   o2.calculateO2(25.0);
   
   float o2_v = o2.getO2();
+  accO2 += o2_v;
+  
   //float temp_v = temperature.getTemperature();
 
   //o2.calculateO2(temp_v);
   //float o2_v2 = o2.getO2();
   
   
-  if (millis() - t >= 6000){
-    t = millis();
+  if (millis() - t >= 1000){
+    t = millis()+(millis()-t-1000);
+    float avgO2 = accO2 / float(acc);
+    acc = 0;
+    accO2 = 0;
     sec_p++;
     if(sec_p > 60){
       sec_p=0;
@@ -134,7 +143,4 @@ void loop() {
       Serial.println("error opening test.txt");
     }
   }
-  
-  
-  delay(1000);
 }
