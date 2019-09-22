@@ -25,6 +25,7 @@ File myFile;
 int hou_p = 0;
 int min_p = 0;
 int sec_p = 0;
+int hr_p = 0;
 
 // oxygen sensor
 #define o2pin   A2
@@ -53,7 +54,7 @@ void setup() {
   pinMode(Power_Air_Pump,  OUTPUT);
   if (!SD.begin(10)) {
     Serial.println("initialization failed!");
-    while (1);
+    //while (1);
   }
   Serial.println("initialization done.");
 
@@ -76,7 +77,7 @@ void setup() {
   // re-open the file for reading:
   myFile = SD.open("TEST_O2.TXT");
   if (myFile) {
-    Serial.println("test_o2.txt:");
+    Serial.println("TEST_O2_2.TXT:");
 
     // read from the file until there's nothing else in it:
     while (myFile.available()) {
@@ -105,7 +106,9 @@ void loop() {
   
   
   if (millis() - t >= 1000){
-    t = millis()+(millis()-t-1000);
+    int t_offset = millis()-t-1000;
+    Serial.println(t_offset);
+    t = millis()-t_offset;
     float avgO2 = accO2 / float(acc);
     acc = 0;
     accO2 = 0;
@@ -113,42 +116,57 @@ void loop() {
     if(sec_p >= 60){
       sec_p=0;
       min_p++;
-      if (flag_on){
-        digitalWrite(Power_Air_Pump, LOW); //close
-        flag_on = false;
-      } else {
-        digitalWrite(Power_Air_Pump, HIGH);
-        flag_on=true;
+      if(min_p >= 60){
+        min_p = 0;
+        hr_p++; 
       }
     }
-    if(min_p >= 60){
-      min_p = 0;
-      hou_p++;
+    if (flag_on && (avgO2 > o2upperBound)){
+      digitalWrite(Power_Air_Pump, LOW); //close
+      flag_on = false;
+    } else if (!flag_on && (avgO2 < o2lowerBound)) {
+      digitalWrite(Power_Air_Pump, HIGH);
+      flag_on=true;
     }
+
     myFile = SD.open("TEST_O2.TXT", FILE_WRITE);
     // put your main code here, to run repeatedly:
     // if the file opened okay, write to it:
     if (myFile) {
-      myFile.print(hou_p);
+      myFile.print(hr_p);
       myFile.print(":");
       myFile.print(min_p);
       myFile.print(":");
       myFile.print(sec_p);
       myFile.print(",");
       myFile.print(o2_v);
+      myFile.print(",");
+      myFile.print(flag_on);
       myFile.println("");
       myFile.close();
-      Serial.print(hou_p);
+      Serial.print(hr_p);
       Serial.print(":");
       Serial.print(min_p);
       Serial.print(":");
       Serial.print(sec_p);
       Serial.print(",");
       Serial.print(o2_v);
+      Serial.print(",");
+      Serial.print(flag_on);
       Serial.println("");
     } else {
       // if the file didn't open, print an error:
       Serial.println("error opening test.txt");
+      Serial.print(hr_p);
+      Serial.print(":");
+      Serial.print(min_p);
+      Serial.print(":");
+      Serial.print(sec_p);
+      Serial.print(",");
+      Serial.print(o2_v);
+      Serial.print(",");
+      Serial.print(flag_on);
+      Serial.println("");
     }
   }
 }
