@@ -22,6 +22,7 @@
 #include <Aqualib.h>
 
 File myFile;
+int hou_p = 0;
 int min_p = 0;
 int sec_p = 0;
 
@@ -58,7 +59,7 @@ void setup() {
 
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
-  myFile = SD.open("test_o2.txt", FILE_WRITE);
+  myFile = SD.open("TEST_O2.TXT", FILE_WRITE);
 
   // if the file opened okay, write to it:
   if (myFile) {
@@ -73,7 +74,7 @@ void setup() {
   }
 
   // re-open the file for reading:
-  myFile = SD.open("test_o2.txt");
+  myFile = SD.open("TEST_O2.TXT");
   if (myFile) {
     Serial.println("test_o2.txt:");
 
@@ -109,7 +110,7 @@ void loop() {
     acc = 0;
     accO2 = 0;
     sec_p++;
-    if(sec_p > 60){
+    if(sec_p >= 60){
       sec_p=0;
       min_p++;
       if (flag_on){
@@ -120,11 +121,16 @@ void loop() {
         flag_on=true;
       }
     }
-
-    myFile = SD.open("test_o2.txt", FILE_WRITE);
+    if(min_p >= 60){
+      min_p = 0;
+      hou_p++;
+    }
+    myFile = SD.open("TEST_O2.TXT", FILE_WRITE);
     // put your main code here, to run repeatedly:
     // if the file opened okay, write to it:
     if (myFile) {
+      myFile.print(hou_p);
+      myFile.print(":");
       myFile.print(min_p);
       myFile.print(":");
       myFile.print(sec_p);
@@ -132,6 +138,8 @@ void loop() {
       myFile.print(o2_v);
       myFile.println("");
       myFile.close();
+      Serial.print(hou_p);
+      Serial.print(":");
       Serial.print(min_p);
       Serial.print(":");
       Serial.print(sec_p);
