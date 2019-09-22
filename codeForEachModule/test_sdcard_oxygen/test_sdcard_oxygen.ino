@@ -24,6 +24,7 @@
 File myFile;
 int min_p = 0;
 int sec_p = 0;
+int hr_p = 0;
 
 // oxygen sensor
 #define o2pin   A2
@@ -109,9 +110,13 @@ void loop() {
     acc = 0;
     accO2 = 0;
     sec_p++;
-    if(sec_p > 60){
+    if(sec_p >= 60){
       sec_p=0;
       min_p++;
+      if(min_p >= 60){
+        min_p = 0;
+        hr_p++; 
+      }
       if (flag_on){
         digitalWrite(Power_Air_Pump, LOW); //close
         flag_on = false;
