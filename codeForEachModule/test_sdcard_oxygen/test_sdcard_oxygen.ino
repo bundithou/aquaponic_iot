@@ -104,8 +104,8 @@ void loop() {
   //float o2_v2 = o2.getO2();
   
   
-  if (millis() - t >= 5000){
-    int t_offset = millis()-t-5000;
+  if (millis() - t >= 1000){
+    int t_offset = millis()-t-1000;
     Serial.println(t_offset);
     t = millis()+t_offset;
     float avgO2 = accO2 / float(acc);
