@@ -22,7 +22,6 @@
 #include <Aqualib.h>
 
 File myFile;
-int hou_p = 0;
 int min_p = 0;
 int sec_p = 0;
 int hr_p = 0;
@@ -40,9 +39,11 @@ float o2lowerBound = 1.5;
 
 bool flag_on = false;
 
-int t = 0;
+unsigned long t = 0;
 int acc = 0;
-float accO2 = 0;
+
+unsigned long mil = 0;
+double accO2 = 0;
 
 o2sensor o2(o2pin);
 //temperaturesensor temperature(temppin);
@@ -96,20 +97,23 @@ void setup() {
 void loop() {
   o2.calculateO2(25.0);
   
-  float o2_v = o2.getO2();
+  double o2_v = o2.getO2();
   accO2 += o2_v;
-  
+  acc++;
   //float temp_v = temperature.getTemperature();
 
   //o2.calculateO2(temp_v);
   //float o2_v2 = o2.getO2();
   
   
-  if (millis() - t >= 1000){
-    int t_offset = millis()-t-1000;
+  if ((mil = (millis())) - t >= 1000){
+    unsigned long t_offset = mil-t-1000;
+    Serial.print("mil,offset: ");
+    Serial.print(mil);
+    Serial.print(",");
     Serial.println(t_offset);
-    t = millis()-t_offset;
-    float avgO2 = accO2 / float(acc);
+    t = mil-t_offset;
+    double avgO2 = accO2 / float(acc);
     acc = 0;
     accO2 = 0;
     sec_p++;
@@ -124,7 +128,8 @@ void loop() {
     if (flag_on && (avgO2 > o2upperBound)){
       digitalWrite(Power_Air_Pump, LOW); //close
       flag_on = false;
-    } else if (!flag_on && (avgO2 < o2lowerBound)) {
+    }
+    if (!flag_on && (avgO2 < o2lowerBound)) {
       digitalWrite(Power_Air_Pump, HIGH);
       flag_on=true;
     }
@@ -139,18 +144,18 @@ void loop() {
       myFile.print(":");
       myFile.print(sec_p);
       myFile.print(",");
-      myFile.print(o2_v);
+      myFile.print(avgO2);
       myFile.print(",");
       myFile.print(flag_on);
       myFile.println("");
-      myFile.close();
+      myFile.close();-
       Serial.print(hr_p);
       Serial.print(":");
       Serial.print(min_p);
       Serial.print(":");
       Serial.print(sec_p);
       Serial.print(",");
-      Serial.print(o2_v);
+      Serial.print(avgO2);
       Serial.print(",");
       Serial.print(flag_on);
       Serial.println("");
@@ -163,7 +168,7 @@ void loop() {
       Serial.print(":");
       Serial.print(sec_p);
       Serial.print(",");
-      Serial.print(o2_v);
+      Serial.print(avgO2);
       Serial.print(",");
       Serial.print(flag_on);
       Serial.println("");
