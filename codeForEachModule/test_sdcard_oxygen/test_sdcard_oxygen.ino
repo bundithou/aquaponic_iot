@@ -40,7 +40,7 @@ float o2lowerBound = 1.5;
 bool flag_on = false;
 
 unsigned long t = 0;
-int acc = 0;
+unsigned long acc = 0;
 
 unsigned long mil = 0;
 double accO2 = 0;
@@ -98,6 +98,7 @@ void loop() {
   o2.calculateO2(25.0);
   
   double o2_v = o2.getO2();
+  //Serial.println(o2_v);
   accO2 += o2_v;
   acc++;
   //float temp_v = temperature.getTemperature();
@@ -154,8 +155,10 @@ void loop() {
       Serial.print(min_p);
       Serial.print(":");
       Serial.print(sec_p);
-      Serial.print(",");
+      Serial.print(",avg=");
       Serial.print(avgO2);
+      Serial.print(",cur O2=");
+      Serial.print(o2_v);
       Serial.print(",");
       Serial.print(flag_on);
       Serial.println("");
@@ -167,8 +170,10 @@ void loop() {
       Serial.print(min_p);
       Serial.print(":");
       Serial.print(sec_p);
-      Serial.print(",");
+      Serial.print(",avg=");
       Serial.print(avgO2);
+      Serial.print(",cur O2=");
+      Serial.print(o2_v);
       Serial.print(",");
       Serial.print(flag_on);
       Serial.println("");
