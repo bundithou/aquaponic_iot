@@ -29,7 +29,7 @@ int hr_p = 0;
 // oxygen sensor
 #define o2pin   A2
 float o2upperBound = 4.0;
-float o2lowerBound = 1.5;
+float o2lowerBound = 2.0;
 
 // temperature
 //#define temppin 10
@@ -40,7 +40,7 @@ float o2lowerBound = 1.5;
 bool flag_on = false;
 
 unsigned long t = 0;
-int acc = 0;
+unsigned long acc = 0;
 
 unsigned long mil = 0;
 double accO2 = 0;
@@ -78,7 +78,7 @@ void setup() {
   // re-open the file for reading:
   myFile = SD.open("TEST_O2.TXT");
   if (myFile) {
-    Serial.println("TEST_O2_2.TXT:");
+    Serial.println("TEST_O2.TXT:");
 
     // read from the file until there's nothing else in it:
     while (myFile.available()) {
@@ -148,7 +148,7 @@ void loop() {
       myFile.print(",");
       myFile.print(flag_on);
       myFile.println("");
-      myFile.close();-
+      myFile.close();
       Serial.print(hr_p);
       Serial.print(":");
       Serial.print(min_p);
