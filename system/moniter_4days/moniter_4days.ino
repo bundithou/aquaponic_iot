@@ -43,13 +43,10 @@ float soilLowerBound = 25.0;
 
 // on/off buttons
 #define buttonOn 8
-#define buttonOff 9
+#define buttonOff 7
 
-//Distance between water level and the sensor in cm.
-//If it is lower than that, water pump will never pump water out off the fish tank.
-float fishCriticalWaterLevel = 80.0;
-float fishTooMuchWaterLevel = 40.0;
-float fishSafeWaterLevel = 45.0;
+#define air_pump 9
+bool air_pump_working = false;
 
 ////////////////
 //peripheral devices
@@ -86,6 +83,8 @@ void setup() {
   pinMode(MOSI, OUTPUT);
   pinMode(MISO, INPUT);
   pinMode(CLK, OUTPUT);
+  pinMode(air_pump, OUTPUT);
+  digitalWrite(air_pump, LOW);
   
   Serial.print("Initializing SD card...");
   if (!SD.begin(SD_CS)) {
@@ -183,14 +182,14 @@ void loop() {
     int off_reading = digitalRead(buttonOff);
     if(on_reading == LOW){ //on_button is toggled, force start the air pump, water pump, and valve to plantbucket
       delay(50);
-      writeSR(air_pump, HIGH);
+      digitalWrite(air_pump, HIGH);
 //      writeSR(valve3, HIGH);
 //      delay(50);
 //      writeSR(water_pump, HIGH);
     }
     if(off_reading == LOW){
       delay(50);
-      writeSR(air_pump, LOW);
+      digitalWrite(air_pump, LOW);
 //      writeSR(water_pump, LOW);
 //      delay(50);
 //      writeSR(valve3, LOW);
@@ -232,7 +231,7 @@ void loop() {
         myFile.print(",");
         myFile.print(loop_ultra_fish);
         myFile.print(",");
-        myFile.print(ShiftRegisterOutData[air_pump]);
+        myFile.print(air_pump_working);
         myFile.println("");
         myFile.close();
       } else {
@@ -262,7 +261,7 @@ void loop() {
     Serial.print(",");
     Serial.print(loop_ultra_fish);
     Serial.print(",");
-    Serial.print(ShiftRegisterOutData[air_pump]);
+    Serial.print(air_pump_working);
     Serial.println("");
   }
 }
