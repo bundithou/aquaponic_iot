@@ -43,6 +43,10 @@ float soilLowerBound = 25.0;
 #define tankTrigpin 3
 #define tankEchopin 2
 
+// on/off buttons
+#define buttonOn 8
+#define buttonOff 9
+
 //Distance between water level and the sensor in cm.
 //If it is lower than that, water pump will never pump water out off the fish tank.
 float fishCriticalWaterLevel = 80.0;
@@ -83,7 +87,7 @@ unsigned long mil = 0;
 //sensor objects
 o2sensor o2(o2pin);
 temperaturesensor temperature(temppin);
-pHsensor pH(pHpin, 7); //temporary assign unused port for pH LED pin, supposed to remove
+pHsensor pH(pHpin);
 soilMoisturesensor soilMoisture(soilpin);
 ultrasonicsensor ultraSonicFish(fishTrigpin, fishEchopin);
 ultrasonicsensor ultraSonicTank(tankTrigpin, tankEchopin);
@@ -93,6 +97,8 @@ void setup() {
   Serial.begin(115200);
 
   //pins setup
+  pinMode(buttonOn, INPUT);
+  pinMode(buttonOff, INPUT);
   pinMode(SD_CS,  OUTPUT);
   pinMode(MOSI, OUTPUT);
   pinMode(MISO, INPUT);
@@ -192,6 +198,24 @@ void loop() {
     //Control logic & command
     //////////////////////////////
 
+    //Force start/stop
+    int on_reading = digitalRead(buttonOn);
+    int off_reading = digitalRead(buttonOff);
+    if(on_reading == LOW){ //on_button is toggled, force start the air pump, water pump, and valve to plantbucket
+      delay(50);
+      writeSR(air_pump, HIGH);
+      writeSR(valve3, HIGH);
+      delay(50);
+      writeSR(water_pump, HIGH);
+    }
+    if(off_reading == LOW){
+      delay(50);
+      writeSR(air_pump, LOW);
+      writeSR(water_pump, LOW);
+      delay(50);
+      writeSR(valve3, LOW);
+    }
+
     //Air pump
     if (ShiftRegisterOutData[air_pump] && (loop_O2 > o2UpperBound)){
       writeSR(air_pump, LOW); //close
@@ -215,6 +239,8 @@ void loop() {
         writeSR(valve3, HIGH);
       }
       else{
+        writeSR(water_pump, LOW);
+        delay(50);
         writeSR(valve3, LOW);
       }
     }
