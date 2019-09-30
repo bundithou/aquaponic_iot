@@ -10,8 +10,6 @@
 // -calculate water level from ultrasonic, not just leave the distance get from the ultrasonic as-is
 // 
 //
-//
-//
 ////////////////
 
 File myFile;
@@ -45,7 +43,7 @@ float soilLowerBound = 25.0;
 
 // on/off buttons
 #define buttonOn 8
-#define buttonOff 7
+#define buttonOff 9
 
 //Distance between water level and the sensor in cm.
 //If it is lower than that, water pump will never pump water out off the fish tank.
@@ -62,23 +60,6 @@ float fishSafeWaterLevel = 45.0;
 #define MOSI 11
 #define MISO 12
 #define CLK 13
-
-//Pin connected to latch pin (ST_CP) of 74HC595
-#define SR_latchpin 9
-//Pin connected to clock pin (SH_CP) of 74HC595
-#define SR_clockpin 13
-////Pin connected to Data in (DS) of 74HC595
-#define SR_datapin  11
-
-////////////////
-//outputs connecting with Shift Reg
-////////////////
-static unsigned int ShiftRegisterOutData[8] = {LOW,LOW,LOW,LOW,LOW,LOW,LOW,LOW};
-#define water_pump 1
-#define air_pump 2
-#define valve1 3 //not valve L, this is valve one. I really hate this font.
-#define valve2 4
-#define valve3 5
 
 //"""""timer"""""
 unsigned long t = 0;
@@ -105,9 +86,6 @@ void setup() {
   pinMode(MOSI, OUTPUT);
   pinMode(MISO, INPUT);
   pinMode(CLK, OUTPUT);
-  pinMode(SR_latchpin, OUTPUT);
-  //pinMode(SR_clockpin, OUTPUT); //same with CLK
-  pinMode(SR_datapin, OUTPUT);
   
   Serial.print("Initializing SD card...");
   if (!SD.begin(SD_CS)) {
@@ -127,7 +105,7 @@ void setup() {
   if (myFile) {
     Serial.print("Writing to test.txt...");
     //hr:min:sec,O2,pH,soilMoisture,ultra_tank,ultra_fish,water_pump,air_pump,valve1,valve2,valve3
-    myFile.println("tsm, o2_temp, temp value, pH, soil moisture, water tank water distance, fish tank water distance, water pump, air pump, valve1, valve2, valve3");
+    myFile.println("tsm, o2_temp, temp value, pH, soil moisture, water tank water distance, fish tank water distance, air pump");
     // close the file:
     myFile.close();
     Serial.println("done.");
@@ -206,45 +184,16 @@ void loop() {
     if(on_reading == LOW){ //on_button is toggled, force start the air pump, water pump, and valve to plantbucket
       delay(50);
       writeSR(air_pump, HIGH);
-      writeSR(valve3, HIGH);
-      delay(50);
-      writeSR(water_pump, HIGH);
+//      writeSR(valve3, HIGH);
+//      delay(50);
+//      writeSR(water_pump, HIGH);
     }
     if(off_reading == LOW){
       delay(50);
       writeSR(air_pump, LOW);
-      writeSR(water_pump, LOW);
-      delay(50);
-      writeSR(valve3, LOW);
-    }
-
-    //Air pump
-    if (ShiftRegisterOutData[air_pump] && (loop_O2 > o2UpperBound)){
-      writeSR(air_pump, LOW); //close
-    }
-    if (!ShiftRegisterOutData[air_pump] && (loop_O2 < o2LowerBound)) {
-      writeSR(air_pump, HIGH); //open
-    }
-
-    //valve and pump
-    if(loop_ultra_fish > fishCriticalWaterLevel){
-      writeSR(water_pump, LOW);
-    }
-    else{
-      //start pump if pump is not started while there is too much water, or soil is too dry
-      if(ShiftRegisterOutData[water_pump] && ( loop_ultra_fish < fishTooMuchWaterLevel || loop_soilMoisture < soilLowerBound)){
-        writeSR(water_pump, HIGH);
-      }
-
-      //if any ->too much water   ->dry soil    --->open valve3
-      if(loop_ultra_fish < fishTooMuchWaterLevel || loop_soilMoisture < soilLowerBound){
-        writeSR(valve3, HIGH);
-      }
-      else if (loop_ultra_fish > fishSafeWaterLevel){
-        writeSR(water_pump, LOW);
-        delay(50);
-        writeSR(valve3, LOW);
-      }
+//      writeSR(water_pump, LOW);
+//      delay(50);
+//      writeSR(valve3, LOW);
     }
     
     //////////////////////////////
@@ -262,7 +211,7 @@ void loop() {
       if (myFile) {
         if(last_day_p != day_p){
           last_day_p = day_p;
-          myFile.println("tsm, o2_temp, temp value, pH, soil moisture, water tank water distance, fish tank water distance, water pump, air pump, valve1, valve2, valve3");
+          myFile.println("tsm, o2_temp, temp value, pH, soil moisture, water tank water distance, fish tank water distance, air_pump");
         }
         //hr:min:sec,O2,temp,pH,soilMoisture,ultra_tank,ultra_fish,water_pump,air_pump,valve1,valve2,valve3
         myFile.print(hr_p);
@@ -283,15 +232,7 @@ void loop() {
         myFile.print(",");
         myFile.print(loop_ultra_fish);
         myFile.print(",");
-        myFile.print(ShiftRegisterOutData[water_pump]);
-        myFile.print(",");
         myFile.print(ShiftRegisterOutData[air_pump]);
-        myFile.print(",");
-        myFile.print(ShiftRegisterOutData[valve1]);
-        myFile.print(",");
-        myFile.print(ShiftRegisterOutData[valve2]);
-        myFile.print(",");
-        myFile.print(ShiftRegisterOutData[valve3]);
         myFile.println("");
         myFile.close();
       } else {
@@ -321,26 +262,7 @@ void loop() {
     Serial.print(",");
     Serial.print(loop_ultra_fish);
     Serial.print(",");
-    Serial.print(ShiftRegisterOutData[water_pump]);
-    Serial.print(",");
     Serial.print(ShiftRegisterOutData[air_pump]);
-    Serial.print(",");
-    Serial.print(ShiftRegisterOutData[valve1]);
-    Serial.print(",");
-    Serial.print(ShiftRegisterOutData[valve2]);
-    Serial.print(",");
-    Serial.print(ShiftRegisterOutData[valve3]);
     Serial.println("");
   }
-}
-
-void writeSR(int ch, int output){
-  ShiftRegisterOutData[ch] = output;
-  digitalWrite(SR_latchpin, LOW);
-  for(int i=7;i>=0;i--){
-    digitalWrite(SR_datapin, ShiftRegisterOutData[i]);
-    digitalWrite(SR_clockpin,HIGH);
-    digitalWrite(SR_clockpin,LOW);
-  }
-  digitalWrite(SR_latchpin, HIGH);
 }
