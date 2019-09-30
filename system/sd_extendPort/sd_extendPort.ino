@@ -83,6 +83,8 @@ static unsigned int ShiftRegisterOutData[8] = {LOW,LOW,LOW,LOW,LOW,LOW,LOW,LOW};
 //"""""timer"""""
 unsigned long t = 0;
 unsigned long mil = 0;
+unsigned long t_SD = 0;
+unsigned long mil_SD = 0;
 
 //sensor objects
 o2sensor o2(o2pin);
@@ -248,82 +250,86 @@ void loop() {
     //////////////////////////////
     //Logging
     //////////////////////////////
-    String filename = "LOG_";
-    filename.concat(day_p);
-    filename.concat(".TXT");
-    myFile = SD.open(filename, FILE_WRITE);
-    // put your main code here, to run repeatedly:
-    // if the file opened okay, write to it:
-    if (myFile) {
-      if(last_day_p != day_p){
-        last_day_p = day_p;
-        myFile.println("tsm, o2_temp, temp value, soil moisture, water tank water distance, fish tank water distance, water pump, air pump, valve1, valve2, valve3");
+    if ((mil_SD = (millis())) - t_SD >= 60000){
+      unsigned long t_offset_SD = mil_SD - t_SD-60000;
+      t_SD = mil_SD - t_offset_SD;
+      String filename = "LOG_";
+      filename.concat(day_p);
+      filename.concat(".TXT");
+      myFile = SD.open(filename, FILE_WRITE);
+      // put your main code here, to run repeatedly:
+      // if the file opened okay, write to it:
+      if (myFile) {
+        if(last_day_p != day_p){
+          last_day_p = day_p;
+          myFile.println("tsm, o2_temp, temp value, soil moisture, water tank water distance, fish tank water distance, water pump, air pump, valve1, valve2, valve3");
+        }
+        //hr:min:sec,O2,temp,pH,soilMoisture,ultra_tank,ultra_fish,water_pump,air_pump,valve1,valve2,valve3
+        myFile.print(hr_p);
+        myFile.print(":");
+        myFile.print(min_p);
+        myFile.print(":");
+        myFile.print(sec_p);
+        myFile.print(",");
+        myFile.print(loop_O2);
+        myFile.print(",");
+        myFile.print(loop_temperature);
+        myFile.print(",");
+        myFile.print(loop_pH);
+        myFile.print(",");
+        myFile.print(loop_soilMoisture);
+        myFile.print(",");
+        myFile.print(loop_ultra_tank);
+        myFile.print(",");
+        myFile.print(loop_ultra_fish);
+        myFile.print(",");
+        myFile.print(ShiftRegisterOutData[water_pump]);
+        myFile.print(",");
+        myFile.print(ShiftRegisterOutData[air_pump]);
+        myFile.print(",");
+        myFile.print(ShiftRegisterOutData[valve1]);
+        myFile.print(",");
+        myFile.print(ShiftRegisterOutData[valve2]);
+        myFile.print(",");
+        myFile.print(ShiftRegisterOutData[valve3]);
+        myFile.println("");
+        myFile.close();
+      } else {
+        // if the file didn't open, print an error:
+        Serial.println("error opening test.txt");
       }
-      //hr:min:sec,O2,temp,pH,soilMoisture,ultra_tank,ultra_fish,water_pump,air_pump,valve1,valve2,valve3
-      myFile.print(hr_p);
-      myFile.print(":");
-      myFile.print(min_p);
-      myFile.print(":");
-      myFile.print(sec_p);
-      myFile.print(",");
-      myFile.print(loop_O2);
-      myFile.print(",");
-      myFile.print(loop_temperature);
-      myFile.print(",");
-      myFile.print(loop_pH);
-      myFile.print(",");
-      myFile.print(loop_soilMoisture);
-      myFile.print(",");
-      myFile.print(loop_ultra_tank);
-      myFile.print(",");
-      myFile.print(loop_ultra_fish);
-      myFile.print(",");
-      myFile.print(ShiftRegisterOutData[water_pump]);
-      myFile.print(",");
-      myFile.print(ShiftRegisterOutData[air_pump]);
-      myFile.print(",");
-      myFile.print(ShiftRegisterOutData[valve1]);
-      myFile.print(",");
-      myFile.print(ShiftRegisterOutData[valve2]);
-      myFile.print(",");
-      myFile.print(ShiftRegisterOutData[valve3]);
-      myFile.println("");
-      myFile.close();
-    } else {
-      // if the file didn't open, print an error:
-      Serial.println("error opening test.txt");
+      //////////////////////////////
+      //Serial monitering
+      //////////////////////////////
+      Serial.print(hr_p);
+      Serial.print(":");
+      Serial.print(min_p);
+      Serial.print(":");
+      Serial.print(sec_p);
+      Serial.print(",");
+      Serial.print(loop_O2);
+      Serial.print(",");
+      Serial.print(loop_temperature);
+      Serial.print(",");
+      Serial.print(loop_pH);
+      Serial.print(",");
+      Serial.print(loop_soilMoisture);
+      Serial.print(",");
+      Serial.print(loop_ultra_tank);
+      Serial.print(",");
+      Serial.print(loop_ultra_fish);
+      Serial.print(",");
+      Serial.print(ShiftRegisterOutData[water_pump]);
+      Serial.print(",");
+      Serial.print(ShiftRegisterOutData[air_pump]);
+      Serial.print(",");
+      Serial.print(ShiftRegisterOutData[valve1]);
+      Serial.print(",");
+      Serial.print(ShiftRegisterOutData[valve2]);
+      Serial.print(",");
+      Serial.print(ShiftRegisterOutData[valve3]);
+      Serial.println("");
     }
-    //////////////////////////////
-    //Serial monitering
-    //////////////////////////////
-    Serial.print(hr_p);
-    Serial.print(":");
-    Serial.print(min_p);
-    Serial.print(":");
-    Serial.print(sec_p);
-    Serial.print(",");
-    Serial.print(loop_O2);
-    Serial.print(",");
-    Serial.print(loop_temperature);
-    Serial.print(",");
-    Serial.print(loop_pH);
-    Serial.print(",");
-    Serial.print(loop_soilMoisture);
-    Serial.print(",");
-    Serial.print(loop_ultra_tank);
-    Serial.print(",");
-    Serial.print(loop_ultra_fish);
-    Serial.print(",");
-    Serial.print(ShiftRegisterOutData[water_pump]);
-    Serial.print(",");
-    Serial.print(ShiftRegisterOutData[air_pump]);
-    Serial.print(",");
-    Serial.print(ShiftRegisterOutData[valve1]);
-    Serial.print(",");
-    Serial.print(ShiftRegisterOutData[valve2]);
-    Serial.print(",");
-    Serial.print(ShiftRegisterOutData[valve3]);
-    Serial.println("");
   }
 }
 
