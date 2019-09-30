@@ -240,7 +240,7 @@ void loop() {
       if(loop_ultra_fish < fishTooMuchWaterLevel || loop_soilMoisture < soilLowerBound){
         writeSR(valve3, HIGH);
       }
-      else{
+      else if (loop_ultra_fish > fishSafeWaterLevel){
         writeSR(water_pump, LOW);
         delay(50);
         writeSR(valve3, LOW);
