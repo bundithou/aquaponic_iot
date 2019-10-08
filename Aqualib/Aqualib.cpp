@@ -385,7 +385,7 @@ float temperaturesensor::getTemperature(void)
 	}
 	else {
 		tempsensors->requestTemperatures(); // Send the command to get temperatures
-		temperatureValue = tempsensors->getTempCByIndex(0);
+		temperatureValue = tempsensors->getTempCByIndex(0) + 4.360952381; // adjustment value
 		return temperatureValue;
 	}
 
