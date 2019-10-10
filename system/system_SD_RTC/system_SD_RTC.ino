@@ -163,7 +163,7 @@ void setup() {
 
   // Set the current date, and time in the following format:
   // seconds, minutes, hours, day of the week, day of the month, month, year
-  // myRTC.setDS1302Time(00, 59, 23, 6, 10, 1, 2014);
+  myRTC.setDS1302Time(DateTime(F(__DATE__), F(__TIME__)));
 }
 
 void loop() {
