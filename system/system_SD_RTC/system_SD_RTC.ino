@@ -71,6 +71,8 @@ int timeDiff;
 int lastRead_second = 0;
 int lastRead_minute = 0;
 
+int yOff, m, d, hh, mm, ss;
+
 ////////////////
 //System control
 ////////////////
@@ -163,7 +165,8 @@ void setup() {
 
   // Set the current date, and time in the following format:
   // seconds, minutes, hours, day of the week, day of the month, month, year
-  myRTC.setDS1302Time(DateTime(F(__DATE__), F(__TIME__)));
+  setRealStartTime(F(__DATE__), F(__TIME__));
+  myRTC.setDS1302Time(ss, mm, hh, dayofweek(d, m, yOff), d, m, yOff);
 }
 
 void loop() {
@@ -351,4 +354,41 @@ void writeControl(int ch, int output){
   }
   control_flags[index] = output;
   digitalWrite(ch, output);
+}
+
+void setRealStartTime (const __FlashStringHelper* date, const __FlashStringHelper* time) {
+    // sample input: date = "Dec 26 2009", time = "12:34:56"
+    char buff[11];
+    memcpy_P(buff, date, 11);
+    yOff = conv2d(buff + 9);
+    // Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
+    switch (buff[0]) {
+        case 'J': m = (buff[1] == 'a') ? 1 : ((buff[2] == 'n') ? 6 : 7); break;
+        case 'F': m = 2; break;
+        case 'A': m = buff[2] == 'r' ? 4 : 8; break;
+        case 'M': m = buff[2] == 'r' ? 3 : 5; break;
+        case 'S': m = 9; break;
+        case 'O': m = 10; break;
+        case 'N': m = 11; break;
+        case 'D': m = 12; break;
+    }
+    d = conv2d(buff + 4);
+    memcpy_P(buff, time, 8);
+    hh = conv2d(buff);
+    mm = conv2d(buff + 3);
+    ss = conv2d(buff + 6);
+}
+
+int dayofweek(int d, int m, int y) 
+{ 
+    static int t[] = { 0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4 }; 
+    y -= m < 3; 
+    return ( y + y/4 - y/100 + y/400 + t[m-1] + d) % 7; 
+}
+
+uint8_t conv2d(const char* p) {
+    uint8_t v = 0;
+    if ('0' <= *p && *p <= '9')
+        v = *p - '0';
+    return 10 * v + *++p - '0';
 }
