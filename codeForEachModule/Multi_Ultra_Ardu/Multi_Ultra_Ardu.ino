@@ -4,8 +4,8 @@
 #define echoPin2  2   //5
 
 
-long duration, distance, PondSensor,TankSensor;
-
+long duration, PondSensor,TankSensor;
+double distance;
 void setup()
 { 
 Serial.begin (9600);
@@ -39,6 +39,6 @@ digitalWrite(trigPin, HIGH);
 delayMicroseconds(10);
 digitalWrite(trigPin, LOW);
 duration = pulseIn(echoPin, HIGH);
-distance = (duration/2) / 29.1;
+distance = (duration/2.0) / 29.1;
 
 }

@@ -54,10 +54,10 @@ float waterTankTooLessWater = 33.0;
 //peripheral devices
 ////////////////
 // SD card
-#define SD_CS 10
-#define MOSI 11
-#define MISO 12
-#define CLK 13
+#define SD_CS 53
+#define MOSI 51
+#define MISO 50
+#define CLK 52
 
 // RTC
 #define RTC_CLK 23

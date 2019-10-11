@@ -126,7 +126,7 @@ void setup() {
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
   String filename = "LOG_";
-  filename.concat(day_p);
+  filename.concat(day_p)  ;
   filename.concat(".TXT");
   myFile = SD.open(filename, FILE_WRITE);
 
