@@ -23,8 +23,8 @@ unsigned int last_day_p = 0;
 
 // oxygen sensor
 #define o2pin   A2
-float o2UpperBound = 4.0;
-float o2LowerBound = 2.0;
+float o2UpperBound = 1.8;
+float o2LowerBound = 1.2;
 
 // soil moisture
 #define soilpin A1
@@ -46,7 +46,7 @@ float soilLowerBound = 30.0;
 // on/off buttons
 #define buttonOn 9
 #define buttonOff 8
-
+ 
 //Distance between water level and the sensor in cm.
 //If it is lower than that, water pump will never pump water out off the fish tank.
 float fishCriticalWaterLevel = 80.0;
@@ -56,14 +56,15 @@ float fishSafeWaterLevel = 45.0;
 float waterTankTooLessWater = 33.0;
 
 ////////////////
-//peripheral devices
+//peripheral devices 
+
 //*Note* We are gonna use same DS pin for both SDcard interface and Shift Reg.
 ////////////////
 // SD card
-#define SD_CS 10
-#define MOSI 11
-#define MISO 12
-#define CLK 13
+#define SD_CS 53
+#define MOSI 51
+#define MISO 50
+#define CLK 52
 
 ////////////////
 //System control
