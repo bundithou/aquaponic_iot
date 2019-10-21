@@ -1,3 +1,8 @@
+#include <StandardCplusplus.h>
+#include <system_configuration.h>
+#include <unwind-cxx.h>
+#include <utility.h>
+
 #include <SPI.h>
 #include <SD.h>
 #include <Aqualib.h>
@@ -8,7 +13,7 @@
 // -only pump water from fish tank as routine, use water tank for when the soil is abnormally dry.
 // -fill fish tank water from the water tank when there is not enough water for fish
 // -calculate water level from ultrasonic, not just leave the distance get from the ultrasonic as-is
-// 
+// -averaging the value read from sensors
 //
 //
 //
@@ -74,6 +79,14 @@ int lastRead_minute = 0;
 int yOff, m, d, hh, mm, ss;
 
 ////////////////
+//Data Averaging
+////////////////
+int timeDiffRecord = 0;
+#define secondsToRecord = 6;
+std::vector<float> temperatureRecords;
+std::vector<float> soilMoistureRecords;
+
+////////////////
 //System control
 ////////////////
 #define water_pump 22
@@ -137,7 +150,7 @@ void setup() {
   if (myFile) {
     Serial.print("Writing to test.txt...");
     //hr:min:sec,O2,pH,soilMoisture,ultra_tank,ultra_fish,water_pump,air_pump,valve1,valve2,valve3
-    myFile.println("tsm, o2_temp, temp value, pH, soil moisture, water tank water distance, fish tank water distance, water pump, air pump, valve1, valve2, valve3");
+    myFile.println("Date, time, o2_temp, temp value, pH, soil moisture, water tank water distance, fish tank water distance, water pump, air pump, valve1, valve2, valve3");
     // close the file:
     myFile.close();
     Serial.println("done.");
@@ -165,8 +178,8 @@ void setup() {
 
   // Set the current date, and time in the following format:
   // seconds, minutes, hours, day of the week, day of the month, month, year
-  //setRealStartTime(F(__DATE__), F(__TIME__));
-  //myRTC.setDS1302Time(ss, mm, hh, dayofweek(d, m, 2019), d, m, 2019);
+  setRealStartTime(F(__DATE__), F(__TIME__));
+  myRTC.setDS1302Time(ss, mm, hh, dayofweek(d, m, 2019), d, m, 2019);
 }
 
 void loop() {
@@ -192,6 +205,7 @@ void loop() {
 
     //time update
     lastRead_second = myRTC.seconds;
+    timeDiffRecord++;
     
     //////////////////////////////
     //Control logic & command
@@ -255,11 +269,27 @@ void loop() {
     else{
       writeControl(valve1, LOW);
     }
+
+    //////////////////////////////
+    //Manage value to average
+    //////////////////////////////
+    if(timeDiffRecord >= 6){
+      timeDiffRecord = 0;
+      temperatureRecords.push_back(loop_temperature);
+      soilMoistureRecords.push_back(loop_soilMoisture);
+    }
+
     
     //////////////////////////////
-    //Logging
+    //Log into SDcard
     //////////////////////////////
     if (lastRead_minute != myRTC.minutes){
+      if(temperatureRecords.size() != 0 && soilMoistureRecords.size() != 0){
+        loop_temperature = averageVector(temperatureRecords);
+        loop_soilMoisture = averageVector(soilMoistureRecords);
+        temperatureRecords.clear();
+        soilMoistureRecords.clear();
+      }
       lastRead_minute = myRTC.minutes;
       String filename = "LOG.TXT";
       myFile = SD.open(filename, FILE_WRITE);
@@ -391,4 +421,12 @@ uint8_t conv2d(const char* p) {
     if ('0' <= *p && *p <= '9')
         v = *p - '0';
     return 10 * v + *++p - '0';
+}
+
+float averageVector(std::vector v){
+    float total = 0.0;
+    for(int i=0;i<v.size();i++){
+        total += v;
+    }
+    return total/(float)(v.size());
 }
