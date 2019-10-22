@@ -143,6 +143,21 @@ class ultrasonicsensor
 		long duration;
 };
 
+class floatArrayList
+{
+	public:
+		floatArrayList(int max_size);
+		bool add(float f);
+		float average(void);
+		bool clear(void);
+		int size(void);
+
+	private:
+		float* floatArray;
+		int count;
+		int max_size;
+};
+
 
 
 #endif

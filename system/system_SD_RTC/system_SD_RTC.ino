@@ -1,8 +1,3 @@
-#include <StandardCplusplus.h>
-#include <system_configuration.h>
-#include <unwind-cxx.h>
-#include <utility.h>
-
 #include <SPI.h>
 #include <SD.h>
 #include <Aqualib.h>
@@ -83,8 +78,8 @@ int yOff, m, d, hh, mm, ss;
 ////////////////
 int timeDiffRecord = 0;
 #define secondsToRecord = 6;
-std::vector<float> temperatureRecords;
-std::vector<float> soilMoistureRecords;
+floatArrayList temperatureRecords(20);
+floatArrayList soilMoistureRecords(20);
 
 ////////////////
 //System control
@@ -275,8 +270,8 @@ void loop() {
     //////////////////////////////
     if(timeDiffRecord >= 6){
       timeDiffRecord = 0;
-      temperatureRecords.push_back(loop_temperature);
-      soilMoistureRecords.push_back(loop_soilMoisture);
+      temperatureRecords.add(loop_temperature);
+      soilMoistureRecords.add(loop_soilMoisture);
     }
 
     
@@ -285,8 +280,8 @@ void loop() {
     //////////////////////////////
     if (lastRead_minute != myRTC.minutes){
       if(temperatureRecords.size() != 0 && soilMoistureRecords.size() != 0){
-        loop_temperature = averageVector(temperatureRecords);
-        loop_soilMoisture = averageVector(soilMoistureRecords);
+        loop_temperature = temperatureRecords.average();
+        loop_soilMoisture = soilMoistureRecords.average();
         temperatureRecords.clear();
         soilMoistureRecords.clear();
       }
@@ -421,12 +416,4 @@ uint8_t conv2d(const char* p) {
     if ('0' <= *p && *p <= '9')
         v = *p - '0';
     return 10 * v + *++p - '0';
-}
-
-float averageVector(std::vector v){
-    float total = 0.0;
-    for(int i=0;i<v.size();i++){
-        total += v;
-    }
-    return total/(float)(v.size());
 }
