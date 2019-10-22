@@ -1,7 +1,7 @@
 #include <StandardCplusplus.h>
-#include <system_configuration.h>
-#include <unwind-cxx.h>
-#include <utility.h>
+#include <vector>
+
+using namespace std;
 
 #include <SPI.h>
 #include <SD.h>
@@ -83,8 +83,8 @@ int yOff, m, d, hh, mm, ss;
 ////////////////
 int timeDiffRecord = 0;
 #define secondsToRecord = 6;
-std::vector<float> temperatureRecords;
-std::vector<float> soilMoistureRecords;
+vector<float> temperatureRecords;
+vector<float> soilMoistureRecords;
 
 ////////////////
 //System control
@@ -423,10 +423,10 @@ uint8_t conv2d(const char* p) {
     return 10 * v + *++p - '0';
 }
 
-float averageVector(std::vector v){
+float averageVector(vector<float> v){
     float total = 0.0;
     for(int i=0;i<v.size();i++){
-        total += v;
+        total += v[i];
     }
     return total/(float)(v.size());
 }
