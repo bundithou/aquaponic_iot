@@ -137,7 +137,7 @@ void setup() {
   if (myFile) {
     Serial.print("Writing to test.txt...");
     //hr:min:sec,O2,pH,soilMoisture,ultra_tank,ultra_fish,water_pump,air_pump,valve1,valve2,valve3
-    myFile.println("tsm, o2_temp, temp value, pH, soil moisture, water tank water distance, fish tank water distance, water pump, air pump, valve1, valve2, valve3");
+    myFile.println("Date, Time, O2, Temperature, pH, Soil moisture, Water level in water tank, Water level in fish tank, Water pump, Air pump, Valve1, Valve2");
     // close the file:
     myFile.close();
     Serial.println("done.");
