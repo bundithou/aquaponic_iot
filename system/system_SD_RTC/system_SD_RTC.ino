@@ -59,6 +59,9 @@ float waterTankTooLessWater = 33.0;
 #define MISO 50
 #define CLK 52
 
+String logFile = "LOG.TXT";
+String systemStatusFile = "SYSSTAT.TXT";
+
 // RTC
 #define RTC_CLK 23
 #define RTC_IO 25
@@ -67,11 +70,13 @@ float waterTankTooLessWater = 33.0;
 ////////////////
 //time
 ////////////////
-int timeDiff;
+int timeDiff = 0;
 int lastRead_second = 0;
 int lastRead_minute = 0;
 
 int yOff, m, d, hh, mm, ss;
+
+unsigned long millis_start;
 
 ////////////////
 //Data Averaging
@@ -138,8 +143,7 @@ void setup() {
 
   // open the file. note that only one file can be open at a time,
   // so you have to close this one before opening another.
-  String filename = "LOG.TXT";
-  myFile = SD.open(filename, FILE_WRITE);
+  myFile = SD.open(logFile, FILE_WRITE);
 
   // if the file opened okay, write to it:
   if (myFile) {
@@ -155,9 +159,9 @@ void setup() {
   }
 
   // re-open the file for reading:
-  myFile = SD.open(filename);
+  myFile = SD.open(logFile);
   if (myFile) {
-    Serial.print(filename);
+    Serial.print(logFile);
     Serial.println(":");
 
     // read from the file until there's nothing else in it:
@@ -173,30 +177,48 @@ void setup() {
 
   // Set the current date, and time in the following format:
   // seconds, minutes, hours, day of the week, day of the month, month, year
-  setRealStartTime(F(__DATE__), F(__TIME__));
-  myRTC.setDS1302Time(ss, mm, hh, dayofweek(d, m, 2019), d, m, 2019);
+  //setRealStartTime(F(__DATE__), F(__TIME__));
+  //myRTC.setDS1302Time(ss, mm, hh, dayofweek(d, m, 2019), d, m, 2019);
+  millis_start = millis();
+  //another file for systemStatusLog
+  myFile = SD.open(systemStatusFile, FILE_WRITE);
+  if (myFile){
+    myFile.print("System Start at ");
+    myFile.print(myRTC.year);
+    myFile.print(" ");
+    myFile.print(myRTC.month);
+    myFile.print(" ");
+    myFile.print(myRTC.dayofmonth);
+    myFile.print(",");
+    myFile.print(myRTC.hours);
+    myFile.print(":");
+    myFile.print(myRTC.minutes);
+    myFile.print(":");
+    myFile.println(myRTC.seconds);
+    myFile.print("Current microProcessor millis is");
+    myFile.println(millis_start);
+    myFile.close();
+  }
 }
 
 void loop() {
-
-  //////////////////////////////
-  //Reading from sensors
-  //////////////////////////////
-  float loop_temperature = temperature.getTemperature();
-  pH.calculatepH();
-  o2.calculateO2(loop_temperature);
-
-  float loop_pH = pH.getpH();
-  float loop_O2 = o2.getO2();
-  float loop_soilMoisture = soilMoisture.getSoilMoisture();
-  float loop_ultra_tank = ultraSonicTank.getDistance();
-  float loop_ultra_fish = ultraSonicFish.getDistance();
-
   //update time
   myRTC.updateTime();
   timeDiff = abs(lastRead_second - (myRTC.seconds + 60)) % 60;
   
   if (timeDiff >= 1){ //every second
+    //////////////////////////////
+    //Reading from sensors
+    //////////////////////////////
+    float loop_temperature = temperature.getTemperature();
+    pH.calculatepH();
+    o2.calculateO2(loop_temperature);
+  
+    float loop_pH = pH.getpH();
+    float loop_O2 = o2.getO2();
+    float loop_soilMoisture = soilMoisture.getSoilMoisture();
+    float loop_ultra_tank = ultraSonicTank.getDistance();
+    float loop_ultra_fish = ultraSonicFish.getDistance();
 
     //time update
     lastRead_second = myRTC.seconds;
@@ -286,8 +308,7 @@ void loop() {
         soilMoistureRecords.clear();
       }
       lastRead_minute = myRTC.minutes;
-      String filename = "LOG.TXT";
-      myFile = SD.open(filename, FILE_WRITE);
+      myFile = SD.open(logFile, FILE_WRITE);
       // put your main code here, to run repeatedly:
       // if the file opened okay, write to it:
       if (myFile) {
@@ -325,9 +346,59 @@ void loop() {
         myFile.print(control_flags[valve2_index]);
         myFile.println("");
         myFile.close();
+        myFile = SD.open(systemStatusFile, FILE_WRITE);
+        if(myFile){
+          myFile.print(millis() - millis_start);
+          myFile.println(", Datalog works fine");
+          myFile.close();
+        }
       } else {
         // if the file didn't open, print an error:
         Serial.println("error opening test.txt");
+
+        //test if another file is still working
+        myFile = SD.open(systemStatusFile, FILE_WRITE);
+        if(myFile){
+          myFile.print(millis() - millis_start);
+          myFile.println(", Datalog file is not working now, but the SDcard module is still work");
+          myFile.close();
+          myFile = SD.open("BACKUPPLAN.TXT", FILE_WRITE);
+          if(myFile){
+            myFile.print(myRTC.year);
+            myFile.print("/");
+            myFile.print(myRTC.month);
+            myFile.print("/");
+            myFile.print(myRTC.dayofmonth);
+            myFile.print(",");
+            myFile.print(myRTC.hours);
+            myFile.print(":");
+            myFile.print(myRTC.minutes);
+            myFile.print(":");
+            myFile.print(myRTC.seconds);
+            myFile.print(",");
+            myFile.print(loop_O2);
+            myFile.print(",");
+            myFile.print(loop_temperature);
+            myFile.print(",");
+            myFile.print(loop_pH);
+            myFile.print(",");
+            myFile.print(loop_soilMoisture);
+            myFile.print(",");
+            myFile.print(loop_ultra_tank);
+            myFile.print(",");
+            myFile.print(loop_ultra_fish);
+            myFile.print(",");
+            myFile.print(control_flags[water_pump_index]);
+            myFile.print(",");
+            myFile.print(control_flags[air_pump_index]);
+            myFile.print(",");
+            myFile.print(control_flags[valve1_index]);
+            myFile.print(",");
+            myFile.print(control_flags[valve2_index]);
+            myFile.println("");
+            myFile.close();
+          }
+        }
       }
     }
   
