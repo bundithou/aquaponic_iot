@@ -104,6 +104,9 @@ unsigned int waterTimer = 0;
 #define valve1_index 2
 #define valve2_index 3
 
+#define NO_ERR 0
+#define CONN_ERR 2
+#define SD_CONN_ERR 3
 int control_flags[] = {LOW,LOW,LOW,LOW};
 
 
@@ -120,6 +123,7 @@ virtuabotixRTC myRTC(RTC_CLK, RTC_IO, RTC_C_E);
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+  Serial1.begin(115200);
 
   //pins setup
   pinMode(buttonOn, INPUT);
@@ -149,7 +153,7 @@ void setup() {
   if (myFile) {
     Serial.print("Writing to test.txt...");
     //hr:min:sec,O2,pH,soilMoisture,ultra_tank,ultra_fish,water_pump,air_pump,valve1,valve2,valve3
-    myFile.println("Date, Time, O2, Temperature, pH, Soil moisture, Water level in water tank, Water level in fish tank, Water pump, Air pump, Valve1, Valve2");
+    myFile.println("Date, Time, O2, Temperature, pH, Soil moisture, Water level in water tank, Water level in fish tank, Water pump, Air pump, Valve1, Valve2, Status");
     // close the file:
     myFile.close();
     Serial.println("done.");
@@ -165,8 +169,10 @@ void setup() {
     Serial.println(":");
 
     // read from the file until there's nothing else in it:
-    while (myFile.available()) {
-      Serial.write(myFile.read());
+    if(Serial.available()){
+      while (myFile.available()) {
+        Serial.write(myFile.read());
+      }
     }
     // close the file:
     myFile.close();
@@ -344,61 +350,45 @@ void loop() {
         myFile.print(control_flags[valve1_index]);
         myFile.print(",");
         myFile.print(control_flags[valve2_index]);
-        myFile.println("");
-        myFile.close();
-        myFile = SD.open(systemStatusFile, FILE_WRITE);
-        if(myFile){
-          myFile.print(millis() - millis_start);
-          myFile.println(", Datalog works fine");
-          myFile.close();
-        }
-      } else {
-        // if the file didn't open, print an error:
-        Serial.println("error opening test.txt");
-
-        //test if another file is still working
-        myFile = SD.open(systemStatusFile, FILE_WRITE);
-        if(myFile){
-          myFile.print(millis() - millis_start);
-          myFile.println(", Datalog file is not working now, but the SDcard module is still work");
-          myFile.close();
-          myFile = SD.open("BACKUPPLAN.TXT", FILE_WRITE);
-          if(myFile){
-            myFile.print(myRTC.year);
-            myFile.print("/");
-            myFile.print(myRTC.month);
-            myFile.print("/");
-            myFile.print(myRTC.dayofmonth);
-            myFile.print(",");
-            myFile.print(myRTC.hours);
-            myFile.print(":");
-            myFile.print(myRTC.minutes);
-            myFile.print(":");
-            myFile.print(myRTC.seconds);
-            myFile.print(",");
-            myFile.print(loop_O2);
-            myFile.print(",");
-            myFile.print(loop_temperature);
-            myFile.print(",");
-            myFile.print(loop_pH);
-            myFile.print(",");
-            myFile.print(loop_soilMoisture);
-            myFile.print(",");
-            myFile.print(loop_ultra_tank);
-            myFile.print(",");
-            myFile.print(loop_ultra_fish);
-            myFile.print(",");
-            myFile.print(control_flags[water_pump_index]);
-            myFile.print(",");
-            myFile.print(control_flags[air_pump_index]);
-            myFile.print(",");
-            myFile.print(control_flags[valve1_index]);
-            myFile.print(",");
-            myFile.print(control_flags[valve2_index]);
-            myFile.println("");
-            myFile.close();
+        myFile.print(",");
+        if(!Serial2.available()){
+          //if communication with ESP failed
+          File sysStatFile = SD.open(systemStatusFile, FILE_WRITE);
+          if(sysStatFile){
+            sysStatFile.print("Serail communication with ESP errored at ");
+            sysStatFile.print(myRTC.year);
+            sysStatFile.print("/");
+            sysStatFile.print(myRTC.month);
+            sysStatFile.print("/");
+            sysStatFile.print(myRTC.dayofmonth);
+            sysStatFile.print(",");
+            sysStatFile.print(myRTC.hours);
+            sysStatFile.print(":");
+            sysStatFile.print(myRTC.minutes);
+            sysStatFile.print(":");
+            sysStatFile.print(myRTC.seconds);
+            sysStatFile.println("");
+            sysStatFile.close();
           }
+          myFile.println(CONN_ERR);
         }
+        else{
+          myFile.println(NO_ERR);
+        }
+        myFile.close();
+      }
+      else {
+        //if SDcard module failed
+        //tell ESP that it's failed
+        String str_for_esp = String(myRTC.year) + "/" + String(myRTC.month) + "/" + String(myRTC.dayofmonth)
+                                        + "," + String(myRTC.hours) + ":" + String(myRTC.minutes) + ":"
+                                        + String(myRTC.seconds) + "," + String(loop_O2) + "," + String(loop_temperature)
+                                        + "," + String(loop_pH) + "," + String(loop_soilMoisture) + "," 
+                                        + String(loop_ultra_tank) + "," + String(loop_ultra_fish) + ","
+                                        + String(control_flags[water_pump_index]) + "," + String(control_flags[air_pump_index])
+                                        + "," + String(control_flags[valve1_index]) + "," + String(control_flags[valve2_index])
+                                        + String(SD_CONN_ERR);
+        Serial1.println(str_for_esp);
       }
     }
   
