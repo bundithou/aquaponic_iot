@@ -1,8 +1,8 @@
 /*
 run on esp
 serial2
-tx 17
-rx 16
+tx 16
+rx 17
 */
 
 void setup() {
