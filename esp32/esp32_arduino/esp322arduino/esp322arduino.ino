@@ -1,20 +1,27 @@
-
-HardwareSerial sw(2);
+/*
+run on esp
+serial2
+tx 17
+rx 16
+*/
 
 void setup() {
   Serial.begin(115200); 
   Serial.println("setup");
-  sw.begin(115200); 
+  Serial2.begin(115200); 
 }
 
 void loop() {
   String d = "";
- if (sw.available() > 0) {
+  // read
+ if (Serial2.available() > 0) {
    //Serial.println("receive: ");
    char bfr[501];
    memset(bfr,0, 501);
-   sw.readBytesUntil( '\n',bfr,500);
+   Serial2.readBytesUntil( '\n',bfr,500);
    Serial.println(bfr);
  }
+ //send
+ Serial2.println("ack");
    delay(5000);
  }
