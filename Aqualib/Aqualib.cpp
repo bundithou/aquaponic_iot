@@ -390,3 +390,38 @@ float temperaturesensor::getTemperature(void)
 	}
 
 }
+
+floatArrayList::floatArrayList(int max_size)
+{
+	float temp[max_size];
+	this->floatArray = temp;
+	this->count = 0;
+	this->max_size = max_size;
+}
+
+bool floatArrayList::add(float f)
+{
+	if (count == max_size) return false;
+	floatArray[count++] = f;
+	return true;
+}
+
+float floatArrayList::average(void)
+{
+	if (count == 0) return 0;
+	float sum = 0.0;
+	for (int i = 0;i < count;i++) {
+		sum += floatArray[i];
+	}
+	return sum / ((float)count);
+}
+
+bool floatArrayList::clear(void)
+{
+	count = 0;
+}
+
+int floatArrayList::size(void)
+{
+	return count;
+}
