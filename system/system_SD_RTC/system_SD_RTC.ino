@@ -109,6 +109,8 @@ unsigned int waterTimer = 0;
 #define SD_CONN_ERR 3
 int control_flags[] = {LOW,LOW,LOW,LOW};
 
+int keep_on_pumping_water = LOW;
+
 
 //sensor objects
 o2sensor o2(o2pin);
@@ -245,52 +247,69 @@ void loop() {
       waterTimer++;
     }
     
-    if(on_reading == LOW){ //on_button is toggled, force start the air pump, water pump, and valve to plantbucket
-      delay(50);
-      writeControl(air_pump, HIGH);
-      writeControl(water_pump, HIGH);
-      waterTimer = 0;
+//    if(on_reading == LOW){ //on_button is toggled, force start the air pump, water pump, and valve to plantbucket
+//      delay(50);
+//      writeControl(air_pump, HIGH);
+//      writeControl(water_pump, HIGH);
+//      waterTimer = 0;
+//    }
+//    if(off_reading == LOW){
+//      delay(50);
+//      writeControl(air_pump, LOW);
+//      writeControl(water_pump, LOW);
+//    }
+
+    //P' Puwa Request
+    if(on_reading == LOW && keep_on_pumping_water == LOW){
+      keep_on_pumping_water == HIGH;
     }
-    if(off_reading == LOW){
-      delay(50);
-      writeControl(air_pump, LOW);
-      writeControl(water_pump, LOW);
+    if(off_reading == LOW && keep_on_pumping_water == HIGH){
+      keep_on_pumping_water == LOW;
+        writeControl(valve2, LOW);
+        writeControl(water_pump, LOW);
     }
 
-    //Air pump
-    if (control_flags[air_pump_index] && (loop_O2 > o2UpperBound)){
-      writeControl(air_pump, LOW); //close
-    }
-    if (!control_flags[air_pump_index] && (loop_O2 < o2LowerBound)) {
-      writeControl(air_pump, HIGH); //open
-    }
-
-    //water pump
-    //if there is not enough water in the fish tank, no water should be used from it
-    if(loop_ultra_fish > fishCriticalWaterLevel){
-      writeControl(water_pump, LOW);
-      
-    }
-    else{
-      //if it is the time to water plant
-      if((myRTC.hours == water_schedule_hr1 || myRTC.hours == water_schedule_hr2) && myRTC.minutes == 0 && myRTC.seconds == 0){
+    if(keep_on_pumping_water){
+        writeControl(valve1, LOW);
+        writeControl(valve2, HIGH);
         writeControl(water_pump, HIGH);
-      }
-    }
-
-    //valve
-    if(loop_soilMoisture < soilLowerBound){
-      writeControl(valve2, HIGH);
-    }
-    else if(loop_soilMoisture > soilUpperBound){
-      writeControl(valve2, LOW);
-    }
-
-    if(loop_ultra_fish > fishCriticalWaterLevel && loop_ultra_tank < waterTankTooLessWater){
-      writeControl(valve1, HIGH);
+        writeControl(air_pump, LOW);
     }
     else{
-      writeControl(valve1, LOW);
+      //Air pump
+      if (control_flags[air_pump_index] && (loop_O2 > o2UpperBound)){
+        writeControl(air_pump, LOW); //close
+      }
+      if (!control_flags[air_pump_index] && (loop_O2 < o2LowerBound)) {
+        writeControl(air_pump, HIGH); //open
+      }
+  
+      //water pump
+      //if there is not enough water in the fish tank, no water should be used from it
+      if(loop_ultra_fish > fishCriticalWaterLevel){
+        writeControl(water_pump, LOW);
+      }
+      else{
+        //if it is the time to water plant
+        if((myRTC.hours == water_schedule_hr1 || myRTC.hours == water_schedule_hr2) && myRTC.minutes == 0 && myRTC.seconds == 0){
+          writeControl(water_pump, HIGH);
+        }
+      }
+  
+      //valve
+      if(loop_soilMoisture < soilLowerBound){
+        writeControl(valve2, HIGH);
+      }
+      else if(loop_soilMoisture > soilUpperBound){
+        writeControl(valve2, LOW);
+      }
+  
+      if(loop_ultra_fish > fishCriticalWaterLevel && loop_ultra_tank < waterTankTooLessWater){
+        writeControl(valve1, HIGH);
+      }
+      else{
+        writeControl(valve1, LOW);
+      }
     }
 
     //////////////////////////////
