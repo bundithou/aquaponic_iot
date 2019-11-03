@@ -37,24 +37,24 @@ void setup() {
 }
 
 void loop() {
-  String d = "";
-  if (!client.connected()) {
-  reconnect();
-  }
-  client.loop(); 
-  // read
- if (Serial2.available() > 0) {
+    // String d = "";
+    if (!client.connected()) {
+    reconnect();
+    }
+    client.loop(); 
+    // read
+   if (Serial2.available() > 0) {
+  
+     //Serial.println("receive: ");
+     char bfr[501];
+     memset(bfr,0, 501);
+     Serial2.readBytesUntil( '\n',bfr,500);
+     Serial.println(bfr);
 
-   //Serial.println("receive: ");
-   char bfr[501];
-   memset(bfr,0, 501);
-   Serial2.readBytesUntil( '\n',bfr,500);
-   Serial.println(bfr);
-   client.publish("aquaponic", bfc);
- }
- //send
- //Serial2.println("ack");
- //  delay(5000);
+     // sent to mqtt
+     client.publish("aquaponic", bfr);
+   }
+
  }
 
  void setup_wifi() {
@@ -82,7 +82,7 @@ void reconnect() {
     if (client.connect("ESP8266Client")) {
       Serial.println("connected");
       // Once connected, publish an announcement...
-      client.publish("aquaponic", "hello world");
+      client.publish("aquaponic", "reconnected");
       // ... and resubscribe
       client.subscribe("command");
     } else {
