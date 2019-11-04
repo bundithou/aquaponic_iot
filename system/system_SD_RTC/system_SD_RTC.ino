@@ -2,13 +2,11 @@
 #include <SD.h>
 #include <Aqualib.h>
 #include <virtuabotixRTC.h>
+#include <avr/wdt.h>
 ////////////////
 //Things that have not been done
 ////////////////
-// -only pump water from fish tank as routine, use water tank for when the soil is abnormally dry.
-// -fill fish tank water from the water tank when there is not enough water for fish
 // -calculate water level from ultrasonic, not just leave the distance get from the ultrasonic as-is
-// -averaging the value read from sensors
 //
 //
 //
@@ -109,8 +107,11 @@ unsigned int waterTimer = 0;
 #define SD_CONN_ERR 3
 int control_flags[] = {LOW,LOW,LOW,LOW};
 
+//for pumping water out for P'Puwa
 int keep_on_pumping_water = LOW;
 
+//Watchdog Helper
+bool reset_needed = false;
 
 //sensor objects
 o2sensor o2(o2pin);
@@ -127,6 +128,8 @@ void setup() {
   Serial.begin(115200);
   Serial1.begin(115200);
 
+  //watchdog timer
+  wdt_enable(WDTO_8S);
   //pins setup
   pinMode(buttonOn, INPUT);
   pinMode(buttonOff, INPUT);
@@ -210,6 +213,10 @@ void setup() {
 }
 
 void loop() {
+  //tell watchdog timer that the new loop iteration is started
+  if(!reset_needed){
+    wdt_reset();
+  }
   //update time
   myRTC.updateTime();
   timeDiff = abs(lastRead_second - (myRTC.seconds + 60)) % 60;
@@ -408,44 +415,49 @@ void loop() {
                                         + "," + String(control_flags[valve1_index]) + "," + String(control_flags[valve2_index])
                                         + String(SD_CONN_ERR);
         Serial1.println(str_for_esp);
+        delay(1000);
+        Serial1.println(str_for_esp);
+        reset_needed = true;
       }
     }
   
     //////////////////////////////
     //Serial monitering
     //////////////////////////////
-    Serial.print(myRTC.year);
-    Serial.print("/");
-    Serial.print(myRTC.month);
-    Serial.print("/");
-    Serial.print(myRTC.dayofmonth);
-    Serial.print(",");
-    Serial.print(myRTC.hours);
-    Serial.print(":");
-    Serial.print(myRTC.minutes);
-    Serial.print(":");
-    Serial.print(myRTC.seconds);
-    Serial.print(",");
-    Serial.print(loop_O2);
-    Serial.print(",");
-    Serial.print(loop_temperature);
-    Serial.print(",");
-    Serial.print(loop_pH);
-    Serial.print(",");
-    Serial.print(loop_soilMoisture);
-    Serial.print(",");
-    Serial.print(loop_ultra_tank);
-    Serial.print(",");
-    Serial.print(loop_ultra_fish);
-    Serial.print(",");
-    Serial.print(control_flags[water_pump_index]);
-    Serial.print(",");
-    Serial.print(control_flags[air_pump_index]);
-    Serial.print(",");
-    Serial.print(control_flags[valve1_index]);
-    Serial.print(",");
-    Serial.print(control_flags[valve2_index]);
-    Serial.println("");
+    if(Serial.available()){
+      Serial.print(myRTC.year);
+      Serial.print("/");
+      Serial.print(myRTC.month);
+      Serial.print("/");
+      Serial.print(myRTC.dayofmonth);
+      Serial.print(",");
+      Serial.print(myRTC.hours);
+      Serial.print(":");
+      Serial.print(myRTC.minutes);
+      Serial.print(":");
+      Serial.print(myRTC.seconds);
+      Serial.print(",");
+      Serial.print(loop_O2);
+      Serial.print(",");
+      Serial.print(loop_temperature);
+      Serial.print(",");
+      Serial.print(loop_pH);
+      Serial.print(",");
+      Serial.print(loop_soilMoisture);
+      Serial.print(",");
+      Serial.print(loop_ultra_tank);
+      Serial.print(",");
+      Serial.print(loop_ultra_fish);
+      Serial.print(",");
+      Serial.print(control_flags[water_pump_index]);
+      Serial.print(",");
+      Serial.print(control_flags[air_pump_index]);
+      Serial.print(",");
+      Serial.print(control_flags[valve1_index]);
+      Serial.print(",");
+      Serial.print(control_flags[valve2_index]);
+      Serial.println("");
+    }
   }
 }
 
