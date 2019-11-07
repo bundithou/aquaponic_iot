@@ -63,15 +63,16 @@ void loop() {
    }
 
    unsigned long current = millis();
-   if(current - last_milli >= 60000){
+   Serial.println((unsigned long)(current - last_milli));
+   if((unsigned long)(current - last_milli) >= 60000){
+     Serial.println("a minute passed");
      last_milli = current;
      dataCount = 0;
    }
-   if(dataCount > 3){
+   if(dataCount > 10){
     dataCount = 0;
-    Serial2.end();
-    Serial.println("resetting Serial2 pin");  
-    Serial2.begin(115200);
+    Serial.println("Restarting ESP32");
+    ESP.restart();
    }
 
  }

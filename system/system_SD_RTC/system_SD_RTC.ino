@@ -188,8 +188,8 @@ void setup() {
 
   // Set the current date, and time in the following format:
   // seconds, minutes, hours, day of the week, day of the month, month, year
-  //setRealStartTime(F(__DATE__), F(__TIME__));
-  //myRTC.setDS1302Time(ss, mm, hh, dayofweek(d, m, 2019), d, m, 2019);
+//  setRealStartTime(F(__DATE__), F(__TIME__));
+//  myRTC.setDS1302Time(ss, mm, hh, dayofweek(d, m, 2019), d, m, 2019);
   millis_start = millis();
   //another file for systemStatusLog
   myFile = SD.open(systemStatusFile, FILE_WRITE);
@@ -221,7 +221,12 @@ void loop() {
   //update time
   myRTC.updateTime();
   timeDiff = abs(lastRead_second - (myRTC.seconds + 60)) % 60;
-  
+//  Serial.print(timeDiff);
+//  Serial.print(myRTC.hours);
+//  Serial.print(":");
+//  Serial.print(myRTC.minutes);
+//  Serial.print(":");
+//  Serial.println(myRTC.seconds);
   if (timeDiff >= 1){ //every second
     //////////////////////////////
     //Reading from sensors
