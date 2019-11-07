@@ -63,11 +63,14 @@ void loop() {
    }
 
    unsigned long current = millis();
-   if(current - last_millis >= 60000){
-     last_millis = current;
+   if(current - last_milli >= 60000){
+     last_milli = current;
      dataCount = 0;
    }
    if(dataCount > 3){
+    dataCount = 0;
+    Serial2.end();
+    Serial.println("resetting Serial2 pin");  
     Serial2.begin(115200);
    }
 
