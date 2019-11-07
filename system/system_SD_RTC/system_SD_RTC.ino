@@ -168,23 +168,23 @@ void setup() {
   }
 
   // re-open the file for reading:
-  myFile = SD.open(logFile);
-  if (myFile) {
-    Serial.print(logFile);
-    Serial.println(":");
-
-    // read from the file until there's nothing else in it:
-    if(Serial.available()){
-      while (myFile.available()) {
-        Serial.write(myFile.read());
-      }
-    }
-    // close the file:
-    myFile.close();
-  } else {
-    // if the file didn't open, print an error:
-    Serial.println("error opening test.txt");
-  }
+//  myFile = SD.open(logFile);
+//  if (myFile) {
+//    Serial.print(logFile);
+//    Serial.println(":");
+//
+//    // read from the file until there's nothing else in it:
+//    if(Serial.available()){
+//      while (myFile.available()) {
+//        Serial.write(myFile.read());
+//      }
+//    }
+//    // close the file:
+//    myFile.close();
+//  } else {
+//    // if the file didn't open, print an error:
+//    Serial.println("error opening test.txt");
+//  }
 
   // Set the current date, and time in the following format:
   // seconds, minutes, hours, day of the week, day of the month, month, year
@@ -213,6 +213,7 @@ void setup() {
 }
 
 void loop() {
+  Serial.println(timeDiff);
   //tell watchdog timer that the new loop iteration is started
   if(!reset_needed){
     wdt_reset();
@@ -377,7 +378,7 @@ void loop() {
         myFile.print(",");
         myFile.print(control_flags[valve2_index]);
         myFile.print(",");
-        if(!Serial2.available()){
+        if(!Serial1.available()){
           //if communication with ESP failed
           File sysStatFile = SD.open(systemStatusFile, FILE_WRITE);
           if(sysStatFile){
@@ -399,6 +400,17 @@ void loop() {
           myFile.println(CONN_ERR);
         }
         else{
+          String str_for_esp = String(myRTC.year) + "/" + String(myRTC.month) + "/" + String(myRTC.dayofmonth)
+                                        + "," + String(myRTC.hours) + ":" + String(myRTC.minutes) + ":"
+                                        + String(myRTC.seconds) + "," + String(loop_O2) + "," + String(loop_temperature)
+                                        + "," + String(loop_pH) + "," + String(loop_soilMoisture) + "," 
+                                        + String(loop_ultra_tank) + "," + String(loop_ultra_fish) + ","
+                                        + String(control_flags[water_pump_index]) + "," + String(control_flags[air_pump_index])
+                                        + "," + String(control_flags[valve1_index]) + "," + String(control_flags[valve2_index])
+                                        + String(NO_ERR);
+          Serial1.println(str_for_esp);
+          delay(1000);
+          Serial1.println(str_for_esp);
           myFile.println(NO_ERR);
         }
         myFile.close();

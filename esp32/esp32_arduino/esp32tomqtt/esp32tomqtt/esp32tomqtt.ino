@@ -5,8 +5,8 @@ run on esp
 #include <WiFi.h> //Wifi library
 #include <PubSubClient.h>
 //////// wifi config///////////////
-const char* ssid = "Nopplee";
-const char* password = "0123123156";
+const char* ssid = "MUICT_Aquaponic";
+const char* password = "0907327727";
 
 const char* mqtt_server = "35.198.234.67"; //<-- IP หรือ Domain ของ Server MQTT
 long lastMsg = 0;
@@ -32,6 +32,7 @@ void setup() {
   Serial.begin(115200); 
   Serial.println("setup");
   Serial2.begin(115200); 
+  setup_wifi();
   client.setCallback(callback);
   client.subscribe("command");
 }
