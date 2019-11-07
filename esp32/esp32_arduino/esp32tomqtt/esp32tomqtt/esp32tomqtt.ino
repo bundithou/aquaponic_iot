@@ -14,6 +14,10 @@ char msg[100];
 int value = 0;
 String DataString;
 
+unsigned long last_milli;
+unsigned long timeDiff = 0;
+unsigned int dataCount = 0;
+
 WiFiClient espClient;
 
 // use for receive data from mqtt
@@ -29,7 +33,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 }
 PubSubClient client(mqtt_server, 1883, callback, espClient);
 void setup() {
-  Serial.begin(115200); 
+  last_milli = millis();
   Serial.println("setup");
   Serial2.begin(115200); 
   setup_wifi();
@@ -40,7 +44,7 @@ void setup() {
 void loop() {
     // String d = "";
     if (!client.connected()) {
-    reconnect();
+      reconnect();
     }
     client.loop(); 
     // read
@@ -54,6 +58,17 @@ void loop() {
 
      // sent to mqtt
      client.publish("aquaponic", bfr);
+
+     dataCount++;
+   }
+
+   unsigned long current = millis();
+   if(current - last_millis >= 60000){
+     last_millis = current;
+     dataCount = 0;
+   }
+   if(dataCount > 3){
+    Serial2.begin(115200);
    }
 
  }

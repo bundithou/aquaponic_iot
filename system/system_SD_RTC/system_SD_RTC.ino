@@ -126,8 +126,8 @@ virtuabotixRTC myRTC(RTC_CLK, RTC_IO, RTC_C_E);
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+  delay(10000);
   Serial1.begin(115200);
-
   //watchdog timer
   wdt_enable(WDTO_8S);
   //pins setup
@@ -213,7 +213,7 @@ void setup() {
 }
 
 void loop() {
-  Serial.println(timeDiff);
+//  Serial.println(timeDiff);
   //tell watchdog timer that the new loop iteration is started
   if(!reset_needed){
     wdt_reset();
@@ -339,6 +339,9 @@ void loop() {
         loop_soilMoisture = soilMoistureRecords.average();
         temperatureRecords.clear();
         soilMoistureRecords.clear();
+      }else{
+        temperatureRecords.clear();
+        soilMoistureRecords.clear();
       }
       lastRead_minute = myRTC.minutes;
       myFile = SD.open(logFile, FILE_WRITE);
@@ -407,7 +410,7 @@ void loop() {
                                         + String(loop_ultra_tank) + "," + String(loop_ultra_fish) + ","
                                         + String(control_flags[water_pump_index]) + "," + String(control_flags[air_pump_index])
                                         + "," + String(control_flags[valve1_index]) + "," + String(control_flags[valve2_index])
-                                        + String(NO_ERR);
+                                        + "," + String(NO_ERR);
           Serial1.println(str_for_esp);
           delay(1000);
           Serial1.println(str_for_esp);
@@ -425,7 +428,7 @@ void loop() {
                                         + String(loop_ultra_tank) + "," + String(loop_ultra_fish) + ","
                                         + String(control_flags[water_pump_index]) + "," + String(control_flags[air_pump_index])
                                         + "," + String(control_flags[valve1_index]) + "," + String(control_flags[valve2_index])
-                                        + String(SD_CONN_ERR);
+                                        + "," + String(SD_CONN_ERR);
         Serial1.println(str_for_esp);
         delay(1000);
         Serial1.println(str_for_esp);
@@ -436,7 +439,7 @@ void loop() {
     //////////////////////////////
     //Serial monitering
     //////////////////////////////
-    if(Serial.available()){
+//    if(Serial.available()){
       Serial.print(myRTC.year);
       Serial.print("/");
       Serial.print(myRTC.month);
@@ -468,8 +471,15 @@ void loop() {
       Serial.print(control_flags[valve1_index]);
       Serial.print(",");
       Serial.print(control_flags[valve2_index]);
+      Serial.print(",");
+      if(Serial1.available()){
+        Serial.print(NO_ERR);
+      }
+      else{
+        Serial.print(CONN_ERR);
+      }
       Serial.println("");
-    }
+//    }
   }
 }
 
