@@ -81,8 +81,11 @@ unsigned long millis_start;
 ////////////////
 int timeDiffRecord = 0;
 #define secondsToRecord = 6;
-floatArrayList temperatureRecords(20);
-floatArrayList soilMoistureRecords(20);
+const int numReadings = 10;
+int readIndex = 0;
+float readings_temp[numReadings];
+//floatArrayList temperatureRecords(20);
+//floatArrayList soilMoistureRecords(20);
 
 ////////////////
 //System control
@@ -106,9 +109,11 @@ unsigned int waterTimer = 0;
 #define CONN_ERR 2
 #define SD_CONN_ERR 3
 int control_flags[] = {LOW,LOW,LOW,LOW};
+int minute_control_flags[] = {LOW,LOW,LOW,LOW};
+unsigned int controllable_num = 4;
 
 //for pumping water out for P'Puwa
-int keep_on_pumping_water = LOW;
+bool keep_on_pumping_water = LOW;
 
 //Watchdog Helper
 bool reset_needed = false;
@@ -273,10 +278,14 @@ void loop() {
 //    }
 
     //P' Puwa Request
-    if(on_reading == LOW && keep_on_pumping_water == LOW){
+    if(on_reading == LOW /*&& keep_on_pumping_water == LOW*/){
+      Serial.println("on button presseed");
+      delay(50);
       keep_on_pumping_water == HIGH;
     }
-    if(off_reading == LOW && keep_on_pumping_water == HIGH){
+    if(off_reading == LOW /*&& keep_on_pumping_water == HIGH*/){
+      Serial.println("off button presseed");
+      delay(50);
       keep_on_pumping_water == LOW;
         writeControl(valve2, LOW);
         writeControl(water_pump, LOW);
@@ -284,7 +293,7 @@ void loop() {
 
     if(keep_on_pumping_water){
         writeControl(valve1, LOW);
-        writeControl(valve2, HIGH);
+        writeControl(valve2, LOW);
         writeControl(water_pump, HIGH);
         writeControl(air_pump, LOW);
     }
@@ -325,13 +334,20 @@ void loop() {
       }
     }
 
+    //control flag for minute cleanup
+    check_minute_control_flags();
+
     //////////////////////////////
     //Manage value to average
     //////////////////////////////
     if(timeDiffRecord >= 6){
       timeDiffRecord = 0;
-      temperatureRecords.add(loop_temperature);
-      soilMoistureRecords.add(loop_soilMoisture);
+      //temperatureRecords.add(loop_temperature);
+      //soilMoistureRecords.add(loop_soilMoisture);
+      readings_temp[readIndex++] = loop_temperature;
+      if(readIndex >= numReadings){
+        readIndex = 0;
+      }
     }
 
     
@@ -339,15 +355,7 @@ void loop() {
     //Log into SDcard
     //////////////////////////////
     if (lastRead_minute != myRTC.minutes){
-      if(temperatureRecords.size() != 0 && soilMoistureRecords.size() != 0){
-        loop_temperature = temperatureRecords.average();
-        loop_soilMoisture = soilMoistureRecords.average();
-        temperatureRecords.clear();
-        soilMoistureRecords.clear();
-      }else{
-        temperatureRecords.clear();
-        soilMoistureRecords.clear();
-      }
+      loop_temperature = average_float_array(readings_temp, numReadings);
       lastRead_minute = myRTC.minutes;
       myFile = SD.open(logFile, FILE_WRITE);
       // put your main code here, to run repeatedly:
@@ -378,13 +386,13 @@ void loop() {
         myFile.print(",");
         myFile.print(loop_ultra_fish);
         myFile.print(",");
-        myFile.print(control_flags[water_pump_index]);
+        myFile.print(minute_control_flags[water_pump_index]);
         myFile.print(",");
-        myFile.print(control_flags[air_pump_index]);
+        myFile.print(minute_control_flags[air_pump_index]);
         myFile.print(",");
-        myFile.print(control_flags[valve1_index]);
+        myFile.print(minute_control_flags[valve1_index]);
         myFile.print(",");
-        myFile.print(control_flags[valve2_index]);
+        myFile.print(minute_control_flags[valve2_index]);
         myFile.print(",");
         if(!Serial1.available()){
           //if communication with ESP failed
@@ -413,8 +421,8 @@ void loop() {
                                         + String(myRTC.seconds) + "," + String(loop_O2) + "," + String(loop_temperature)
                                         + "," + String(loop_pH) + "," + String(loop_soilMoisture) + "," 
                                         + String(loop_ultra_tank) + "," + String(loop_ultra_fish) + ","
-                                        + String(control_flags[water_pump_index]) + "," + String(control_flags[air_pump_index])
-                                        + "," + String(control_flags[valve1_index]) + "," + String(control_flags[valve2_index])
+                                        + String(minute_control_flags[water_pump_index]) + "," + String(minute_control_flags[air_pump_index])
+                                        + "," + String(minute_control_flags[valve1_index]) + "," + String(minute_control_flags[valve2_index])
                                         + "," + String(NO_ERR);
           Serial1.println(str_for_esp);
           delay(1000);
@@ -431,14 +439,15 @@ void loop() {
                                         + String(myRTC.seconds) + "," + String(loop_O2) + "," + String(loop_temperature)
                                         + "," + String(loop_pH) + "," + String(loop_soilMoisture) + "," 
                                         + String(loop_ultra_tank) + "," + String(loop_ultra_fish) + ","
-                                        + String(control_flags[water_pump_index]) + "," + String(control_flags[air_pump_index])
-                                        + "," + String(control_flags[valve1_index]) + "," + String(control_flags[valve2_index])
+                                        + String(minute_control_flags[water_pump_index]) + "," + String(minute_control_flags[air_pump_index])
+                                        + "," + String(minute_control_flags[valve1_index]) + "," + String(minute_control_flags[valve2_index])
                                         + "," + String(SD_CONN_ERR);
         Serial1.println(str_for_esp);
         delay(1000);
         Serial1.println(str_for_esp);
         reset_needed = true;
       }
+      reset_minute_control_flags();
     }
   
     //////////////////////////////
@@ -535,4 +544,26 @@ uint8_t conv2d(const char* p) {
     if ('0' <= *p && *p <= '9')
         v = *p - '0';
     return 10 * v + *++p - '0';
+}
+
+void check_minute_control_flags(){
+  for(int i=0; i<controllable_num; i++){
+    if(control_flags[i] == HIGH){
+      minute_control_flags[i] = HIGH;
+    }
+  }
+}
+
+void reset_minute_control_flags(){
+  for(int i=0; i<controllable_num; i++){
+    minute_control_flags[i] = LOW;
+  }
+}
+
+float average_float_array(float* arr, int arr_size){
+  float total = 0;
+  for(int i=0;i<arr_size;i++){
+    total += arr[i];
+  }
+  return total/arr_size;  
 }
