@@ -17,7 +17,7 @@ File myFile;
 // oxygen sensor
 #define o2pin   A2
 float o2UpperBound = 4.0;
-float o2LowerBound = 2.0;
+float o2LowerBound = 3.0;
 
 // soil moisture
 #define soilpin A1
@@ -113,7 +113,7 @@ int minute_control_flags[] = {LOW,LOW,LOW,LOW};
 unsigned int controllable_num = 4;
 
 //for pumping water out for P'Puwa
-bool keep_on_pumping_water = LOW;
+bool keep_on_pumping_water = false;
 
 //Watchdog Helper
 bool reset_needed = false;
@@ -281,21 +281,22 @@ void loop() {
     if(on_reading == LOW /*&& keep_on_pumping_water == LOW*/){
       Serial.println("on button presseed");
       delay(50);
-      keep_on_pumping_water == HIGH;
+      keep_on_pumping_water = true;
     }
     if(off_reading == LOW /*&& keep_on_pumping_water == HIGH*/){
       Serial.println("off button presseed");
       delay(50);
-      keep_on_pumping_water == LOW;
-        writeControl(valve2, LOW);
-        writeControl(water_pump, LOW);
+      keep_on_pumping_water = false;
+      writeControl(valve2, LOW);
+      writeControl(water_pump, LOW);
     }
-
+    //Serial.println(keep_on_pumping_water);
     if(keep_on_pumping_water){
-        writeControl(valve1, LOW);
-        writeControl(valve2, LOW);
-        writeControl(water_pump, HIGH);
-        writeControl(air_pump, LOW);
+      Serial.println("pumping water out");
+      writeControl(valve1, LOW);
+      writeControl(valve2, LOW);
+      writeControl(water_pump, HIGH);
+      writeControl(air_pump, LOW);
     }
     else{
       //Air pump
