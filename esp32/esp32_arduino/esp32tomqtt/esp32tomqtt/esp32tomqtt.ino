@@ -34,7 +34,11 @@ void callback(char* topic, byte* payload, unsigned int length) {
 PubSubClient client(mqtt_server, 1883, callback, espClient);
 void setup() {
   last_milli = millis();
+  Serial.begin(115200);
   Serial.println("setup");
+  Serial.println("20secs delay");
+  delay(20000);
+  Serial.println("starting serial2");
   Serial2.begin(115200); 
   setup_wifi();
   client.setCallback(callback);
@@ -63,16 +67,21 @@ void loop() {
    }
 
    unsigned long current = millis();
-   Serial.println((unsigned long)(current - last_milli));
+   //Serial.println((unsigned long)(current - last_milli));
    if((unsigned long)(current - last_milli) >= 60000){
      Serial.println("a minute passed");
      last_milli = current;
+     if(dataCount > 10 || dataCount < 1){
+      dataCount = 0;
+      /*Serial.println("Restarting ESP32");
+      delay(1000);
+      ESP.restart();*/
+      /*Serial2.end();
+      delay(1000);
+      Serial2.begin(115200);*/
+      client.publish("aquaponic", "connection failed");
+     }
      dataCount = 0;
-   }
-   if(dataCount > 10){
-    dataCount = 0;
-    Serial.println("Restarting ESP32");
-    ESP.restart();
    }
 
  }
