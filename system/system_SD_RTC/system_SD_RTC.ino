@@ -193,8 +193,8 @@ void setup() {
 
   // Set the current date, and time in the following format:
   // seconds, minutes, hours, day of the week, day of the month, month, year
-//  setRealStartTime(F(__DATE__), F(__TIME__));
-//  myRTC.setDS1302Time(ss, mm, hh, dayofweek(d, m, 2019), d, m, 2019);
+  //setRealStartTime(F(__DATE__), F(__TIME__));
+  //myRTC.setDS1302Time(ss, mm, hh, dayofweek(d, m, 2019), d, m, 2019);
   millis_start = millis();
   //another file for systemStatusLog
   myFile = SD.open(systemStatusFile, FILE_WRITE);
