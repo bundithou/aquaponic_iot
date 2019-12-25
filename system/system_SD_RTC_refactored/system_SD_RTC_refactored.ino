@@ -43,8 +43,8 @@ float loop_ultra_tank;
 
 //Distance between water level and the sensor in cm.
 //If it is lower than that, water pump will never pump water out off the fish tank.
-float fishCriticalWaterLevel = 80.0;
-float fishTooMuchWaterLevel = 40.0;
+float fishCriticalWaterLevel = 60.0;
+float fishTooMuchWaterLevel = 35.0;
 float fishSafeWaterLevel = 45.0;
 
 float waterTankTooLessWater = 33.0;
@@ -268,29 +268,46 @@ void get_sensors_value() {
 void get_button_routine_selector() {
   bool on_reading = digitalRead(buttonOn);
   bool off_reading = digitalRead(buttonOff);
-  if (on_reading == HIGH) {
-    if (myRTC.hours > 8 && myRTC.minutes < 16 && myRTC.dayofweek != 0){
+  Serial.println(on_reading);
+  Serial.println(off_reading);
+  if (on_reading == LOW) {
+    Serial.println("1");
+    if (myRTC.hours > 8 && myRTC.hours < 16 && myRTC.dayofweek != 0){
       //change to on button routine
       //on button routine can only occurs between 8:00 to 16:00 of monday to saturday though
+      Serial.println("2");
       on_button_routine_flag = true;
       off_button_routine_flag = false;
+    }else{
+      Serial.println("3");
+      change_on_to_off_routine();
+      on_button_routine_flag = false;
+      off_button_routine_flag = true;
     }
   }
-  else if (off_reading == HIGH) {
+  else if (off_reading == LOW) {
     //change to off button routine
+    Serial.println("4");
+    change_on_to_off_routine();
     on_button_routine_flag = false;
     off_button_routine_flag = true;
   }
 }
 
 void on_button_routine() {
+  Serial.println("on routine");
   writeControl(water_pump, HIGH);
   writeControl(valve1, LOW);
   writeControl(valve2, LOW);
   writeControl(air_pump, LOW);
 }
 
+void change_on_to_off_routine(){
+  writeControl(water_pump, LOW);
+}
+
 void off_button_routine() {
+  Serial.println("off routine");
   check_air_pump_control();
   check_water_pump_control();
   check_valves_control();
