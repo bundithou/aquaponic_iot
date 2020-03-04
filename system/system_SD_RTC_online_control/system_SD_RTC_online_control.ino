@@ -126,16 +126,24 @@ unsigned int valve2Timer = 0;
 #define NO_ERR 0
 #define CONN_ERR 2
 #define SD_CONN_ERR 3
+bool automatic_control = true;
 bool on_button_routine_flag = false;
 bool off_button_routine_flag = true;
 int control_flags[] = {LOW, LOW, LOW, LOW};
 int minute_control_flags[] = {LOW, LOW, LOW, LOW};
 unsigned int controllable_num = 4;
 
-//for pumping water out for P'Puwa
-bool keep_on_pumping_water = false;
-//bool resend_data = false;
-//String resend_data_date;
+//commands
+#define ONLINE_MANUAL_CONTROL   "ONLINE_MANUAL_CONTROL"
+#define AUTOMATIC_CONTROL       "AUTOMATIC_CONTROL"
+#define OPEN_WATER_PUMP         "OPEN_WATER_PUMP"
+#define CLOSE_WATER_PUMP        "CLOSE_WATER_PUMP"
+#define OPEN_AIR_PUMP           "OPEN_AIR_PUMP"
+#define CLOSE_AIR_PUMP          "CLOSE_AIR_PUMP"
+#define OPEN_VALVE1             "OPEN_VALVE1"
+#define CLOSE_VALVE1            "CLOSE_VALVE1"
+#define OPEN_VALVE2             "OPEN_VALVE2"
+#define CLOSE_VALVE2            "CLOSE_VALVE2"
 
 //Watchdog Helper
 bool reset_needed = false;
@@ -198,7 +206,7 @@ void setup() {
   // seconds, minutes, hours, day of the week, day of the month, month, year
   //setRealStartTime(F(__DATE__), F(__TIME__));
   //myRTC.setDS1302Time(ss, mm, hh, dayofweek(d, m, 2020), d, m, 2020);
-  //millis_start = millis();
+  millis_start = millis();
   myFile = SD.open(systemStatusFile, FILE_WRITE);
   if (myFile){
     myFile.print("System Start at ");
@@ -237,9 +245,9 @@ void loop() {
       char bfr[501];
       memset(bfr,0, 501);
       Serial1.readBytesUntil('\n',bfr,500);
-      String fileDate(bfr);
+      String message(bfr);
       //try open the file
-      myFile = SD.open(fileDate+logFileExtension);
+      myFile = SD.open(message+logFileExtension);
       if(myFile){
         unsigned int lineCount = 0;
         while(myFile.available()){
@@ -255,11 +263,15 @@ void loop() {
         myFile = SD.open(systemStatusFile, FILE_WRITE);
         if (myFile){
           myFile.print("LogFile:");
-          myFile.print(fileDate);
+          myFile.print(message);
           myFile.print(" ReturnedLines:");
           myFile.println(lineCount);
           myFile.close();
         }
+      }
+      else{
+        //no such file -> command
+        online_command(message);
       }
     }
     if (on_button_routine_flag) {
@@ -352,10 +364,16 @@ void change_on_to_off_routine(){
 
 void off_button_routine() {
   Serial.println("off routine");
-  check_air_pump_control();
-  check_water_pump_control();
-  check_valves_control();
-  check_minute_control_flags();
+  if(automatic_control){
+    Serial.println("automatic control");
+    check_air_pump_control();
+    check_water_pump_control();
+    check_valves_control();
+    check_minute_control_flags();
+  }
+  else{
+    Serial.println("online manual control");
+  }
 }
 
 void check_air_pump_control() {
@@ -456,14 +474,8 @@ void average_smoothing_data(){
 void log_into_SDcard(){
   myFile = SD.open(create_log_file_name(), FILE_WRITE);
   if(myFile){
-//    if(!Serial1.available()){
-//      myFile.println(create_sensors_actuators_log_string(CONN_ERR));
-//      log_esp_communication_failed_into_SDcard();
-//    }
-//    else{
       myFile.println(create_sensors_actuators_log_string(NO_ERR));
       send_data_log_to_esp(NO_ERR);
-//    }
     myFile.close();
   }
   else{
@@ -471,6 +483,62 @@ void log_into_SDcard(){
     send_data_log_to_esp(SD_CONN_ERR);
     Serial.println("SDCard Failed");
     reset_needed = true;
+  }
+}
+
+void online_command(String command){
+  switch (command)
+  {
+  case ONLINE_MANUAL_CONTROL:
+    automatic_control = false;
+    writeControl(water_pump, LOW);
+    writeControl(air_pump, HIGH);
+    writeControl(valve1, LOW);
+    writeControl(valve2, LOW);
+    break;
+  case AUTOMATIC_CONTROL:
+    automatic_control = true;
+    writeControl(water_pump, LOW);
+    writeControl(air_pump, HIGH);
+    writeControl(valve1, LOW);
+    writeControl(valve2, LOW);
+    break;
+  default:
+    if(automatic_control){
+      switch (command)
+      {
+      case OPEN_WATER_PUMP:
+        writeControl(water_pump, HIGH);
+        break;
+      case CLOSE_WATER_PUMP:
+        writeControl(water_pump, LOW);
+        break;
+      case OPEN_AIR_PUMP:
+        writeControl(air_pump, HIGH);
+        break;
+      case CLOSE_AIR_PUMP:
+        writeControl(air_pump, LOW);
+        break;
+      case OPEN_VALVE1:
+        writeControl(valve1, HIGH);
+        break;
+      case CLOSE_VALVE1:
+        writeControl(valve1, LOW);
+        break;
+      case OPEN_VALVE2:
+        writeControl(valve2, HIGH);
+        break;
+      case CLOSE_VALVE2:
+        writeControl(valve2, LOW);
+        break;
+      
+      default:
+        Serial.print("unknown online command:");
+        Serial.println(command);
+        break;
+      }
+    }
+    break;
   }
 }
 
@@ -512,12 +580,7 @@ void send_data_log_to_esp(int statusFlag){
 }
 
 void print_for_serial_monitor(){
-//  if(Serial1.available()){
     Serial.println(create_sensors_actuators_log_string(NO_ERR));
-//  }
-//  else{
-//    Serial.println(create_sensors_actuators_log_string(CONN_ERR));
-//  }
 }
 
 void writeControl(int ch, int output) {
