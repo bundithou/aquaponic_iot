@@ -20,13 +20,13 @@ void loop() {
   delay(500); //wait for half a second, so it is easier to read
 }*/
 
-const int sensor_pin = A0;  /* Connect Soil moisture analog sensor pin to A0 of NodeMCU */
+const int sensor_pin = A1;  /* Connect Soil moisture analog sensor pin to A0 of NodeMCU */
 int max_analog_moisture = -1;
 int min_analog_moisture = 1024;
 
 
 void setup() {
-  Serial.begin(9600); /* Define baud rate for serial communication */
+  Serial.begin(115200); /* Define baud rate for serial communication */
 }   
 
 void loop() {
@@ -40,7 +40,7 @@ void loop() {
   }
 
   //moisture_percentage = ( 100.00 - ( (analog_moisture/1023.00) * 100.00 ) );
-  moisture_percentage =   (( 584.00-(float)analog_moisture ) / 275.00) * 100.00;
+  moisture_percentage =   (( 591.00-(float)analog_moisture ) / 280.00) * 100.00;
   Serial.print("Analog read: ");
   Serial.print(analog_moisture);
   Serial.print("    Soil Moisture(in Percentage) = ");

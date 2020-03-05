@@ -112,7 +112,7 @@ unsigned int waterTimer = 0;
 
 #define air_pump_checking_schedule1 6 //6am
 #define air_pump_checking_schedule2 18 //6pm
-#define expected_half_daily_air_pump_minute 180 //180minutes
+#define expected_half_daily_air_pump_minute 360 //180minutes
 long airNeededTimer = 0;
 long airTimer = 0;
 
@@ -126,7 +126,7 @@ unsigned int valve2Timer = 0;
 #define NO_ERR 0
 #define CONN_ERR 2
 #define SD_CONN_ERR 3
-bool automatic_control = true;
+bool automatic_control = true; //flag for automatic control / online manual control
 bool on_button_routine_flag = false;
 bool off_button_routine_flag = true;
 int control_flags[] = {LOW, LOW, LOW, LOW};

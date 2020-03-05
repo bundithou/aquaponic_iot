@@ -133,6 +133,7 @@ void loop() {
 // Procedure reconnect ใช้กรณีที่บางทีเราหลุดออกจาก Network แล้วมีการต่อเข้าไปใหม่อีกครั้ง
 void reconnect() {
   // Loop until we're reconnected
+  unsigned int counter = 0;
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
@@ -145,11 +146,14 @@ void reconnect() {
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
-      Serial.println(" try again in 5 seconds with another server");
-      Serial.println("Trying "+(use_mqtt_secondary_server) ? "main server" : "secondary server");
-      client.setServer((use_mqtt_secondary_server) ? mqtt_server : mqtt_secondary_server, 1883);
+      if(++counter > 2){
+        Serial.println(" try again in 5 seconds with another server");
+        use_mqtt_secondary_server = !use_mqtt_secondary_server;
+        Serial.println("Trying "+(use_mqtt_secondary_server) ? "secondary server" : "main server");
+      }
       // Wait 5 seconds before retrying
       delay(5000);
+      client.setServer((use_mqtt_secondary_server) ? mqtt_secondary_server : mqtt_server , 1883);
     }
   }
 }

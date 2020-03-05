@@ -330,7 +330,7 @@ soilMoisturesensor::soilMoisturesensor(int pin)
 }
 
 float soilMoisturesensor::getSoilMoisture(void) {
-	return ((584.00 - (float)(analogRead(this->soil_pin)) / 275.00) * 100.00;
+	return ((591.00 - (float)(analogRead(this->soil_pin))) / 280.00) * 100.00;
 }
 
 

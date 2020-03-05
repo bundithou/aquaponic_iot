@@ -112,7 +112,7 @@ unsigned int waterTimer = 0;
 
 #define air_pump_checking_schedule1 6 //6am
 #define air_pump_checking_schedule2 18 //6pm
-#define expected_half_daily_air_pump_minute 180 //180minutes
+#define expected_half_daily_air_pump_minute 360 //360minutes
 long airNeededTimer = 0;
 long airTimer = 0;
 
