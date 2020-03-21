@@ -4,19 +4,18 @@ Main ESP(Nano 32) code to run on the real system.
 #include <WiFi.h> //Wifi library
 #include <PubSubClient.h>
 //////// wifi config///////////////
-const char* ssid = "MUICT_Aquaponic";
-const char* password = "0907327727";
-
-const char* mqtt_server = "35.240.176.203"; //<-- IP หรือ Domain ของ Server MQTT
-const char* mqtt_secondary_server = "35.221.206.90";
 bool use_mqtt_secondary_server = false;
 long lastMsg = 0;
 char msg[100];
 int value = 0;
 String DataString;
 
-const char* data_topic = "aquaponic";
-const char* data_request_topic = "command/requestData";
+const char* data_topic = "aquaponic"; //out
+const char* data_request_topic = "command/requestData"; //in
+const char* time_set_request_topic = "aquaponic/request"; //out
+const char* time_set_topic = "command/timeSet"; //in
+const char* online_command_topic = "command/onlineCommand";//in
+const char* command_reply_topic = "aquaponic/commandReply";//out
 
 unsigned long last_milli;
 unsigned long timeDiff = 0;
@@ -56,6 +55,20 @@ void callback(char* topic, byte* payload, unsigned int len) {
     Serial.println("sending:"+yyyy+mm+dd);
     Serial2.println(yyyy+mm+dd);
   }
+  else if(topicStr == time_set_topic) {
+    char *token;
+    token = strtok(payloadCStr,",");
+    String date = token;
+    token = strtok(NULL,",");
+    String time = token;
+    Serial.println("sending:"+date+","+time);
+    Serial2.println(date+","+time);
+  }
+  else if(topicStr == online_command_topic){
+    Serial.println("online command:");
+    Serial.println(payloadCStr);
+    Serial2.println(payloadCStr);
+  }
 }
 
 PubSubClient client(mqtt_server, 1883, callback, espClient);
@@ -71,6 +84,8 @@ void setup() {
   setup_wifi();
   client.setCallback(callback);
   client.subscribe(data_request_topic);
+  client.subscribe(time_set_topic);
+  client.subscribe(online_command_topic);
 }
 
 void loop() {
@@ -82,17 +97,33 @@ void loop() {
     // read
     if (Serial2.available() > 0) {
   
-     //Serial.println("receive: ");
-     char bfr[501];
-     memset(bfr,0, 501);
-     Serial2.readBytesUntil( '\n',bfr,500);
-     Serial.println(bfr);
+      //Serial.println("receive: ");
+      char bfr[501];
+      memset(bfr,0, 501);
+      Serial2.readBytesUntil( '\n',bfr,500);
+      Serial.println(bfr);
 
-     // sent to mqtt
-     client.publish(data_topic, bfr);
+      char *token;
+      token = strtok(bfr, "_");
 
-     dataCount++;
-   }
+      if(strlen(token) == 3){
+        if(atoi(token) == 500){
+          token = strtok(NULL, "\0");
+          client.publish(command_reply_topic, token);
+        }
+        else if(atoi(token) == 600){
+          token = strtok(NULL, "\0");
+          client.publish(time_set_request_topic, token);
+        }
+      }
+      else{
+        // sent to mqtt
+        client.publish(data_topic, bfr);
+      }
+
+
+      dataCount++;
+    }
 
    unsigned long current = millis();
    //Serial.println((unsigned long)(current - last_milli));
@@ -107,7 +138,7 @@ void loop() {
       /*Serial2.end();
       delay(1000);
       Serial2.begin(115200);*/
-      client.publish(data_topic, "connection failed");
+      client.publish(time_set_request_topic, "connection failed");
      }
      dataCount = 0;
    }
@@ -143,6 +174,8 @@ void reconnect() {
       client.publish(data_topic, "reconnected");
       // ... and resubscribe
       client.subscribe(data_request_topic);
+      client.subscribe(time_set_topic);
+      client.subscribe(online_command_topic);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());

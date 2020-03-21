@@ -3,6 +3,7 @@
 #include <Aqualib.h>
 #include <virtuabotixRTC.h>
 #include <avr/wdt.h>
+#include <QueueList.h>
 
 File myFile;
 
@@ -14,7 +15,7 @@ float loop_O2;
 
 // soil moisture
 #define soilpin A1
-float soilUpperBound = 80.0;
+float soilUpperBound = 70.0;
 float soilLowerBound = 30.0;
 float loop_soilMoisture;
 
@@ -77,6 +78,8 @@ int lastRead_minute = 0;
 int yOff, m, d, hh, mm, ss;
 
 unsigned long millis_start;
+unsigned long t = 0;
+unsigned long mil = 0;
 
 ////////////////
 //Data Averaging
@@ -107,12 +110,15 @@ float average_soil_mositure;
 #define water_level_schedule_hr2 13
 #define soil_water_schedule_hr1 10
 #define soil_water_schedule_hr2 22
-#define max_watering_time  15 //30seconds
+#define max_watering_time  15 //15seconds
+unsigned int manual_water_time = 0;
 unsigned int waterTimer = 0;
+float max_soil_moisture_after_watering = 0.0;
+float max_soil_moisture_after_watering_threshold = 80.0;
 
 #define air_pump_checking_schedule1 6 //6am
 #define air_pump_checking_schedule2 18 //6pm
-#define expected_half_daily_air_pump_minute 360 //180minutes
+#define expected_half_daily_air_pump_minute 360 //360minutes
 long airNeededTimer = 0;
 long airTimer = 0;
 
@@ -120,6 +126,8 @@ long airTimer = 0;
 #define air_pump_index 1
 #define valve1_index 2
 #define valve2_index 3
+unsigned int manual_valve1_time = 0;
+unsigned int manual_valve2_time = 0;
 unsigned int valve1Timer = 0;
 unsigned int valve2Timer = 0;
 
@@ -134,16 +142,18 @@ int minute_control_flags[] = {LOW, LOW, LOW, LOW};
 unsigned int controllable_num = 4;
 
 //commands
-#define ONLINE_MANUAL_CONTROL   "ONLINE_MANUAL_CONTROL"
-#define AUTOMATIC_CONTROL       "AUTOMATIC_CONTROL"
-#define OPEN_WATER_PUMP         "OPEN_WATER_PUMP"
-#define CLOSE_WATER_PUMP        "CLOSE_WATER_PUMP"
-#define OPEN_AIR_PUMP           "OPEN_AIR_PUMP"
-#define CLOSE_AIR_PUMP          "CLOSE_AIR_PUMP"
-#define OPEN_VALVE1             "OPEN_VALVE1"
-#define CLOSE_VALVE1            "CLOSE_VALVE1"
-#define OPEN_VALVE2             "OPEN_VALVE2"
-#define CLOSE_VALVE2            "CLOSE_VALVE2"
+#define ONLINE_MANUAL_CONTROL     100
+#define AUTOMATIC_CONTROL         200
+#define OPEN_WATER_PUMP           111
+#define CLOSE_WATER_PUMP          110
+#define OPEN_AIR_PUMP             121
+#define CLOSE_AIR_PUMP            120
+#define OPEN_VALVE1               131
+#define CLOSE_VALVE1              130
+#define OPEN_VALVE2               141
+#define CLOSE_VALVE2              140
+#define TIME_SET                  300
+#define ACTUATORS_STATUS_REQUEST  400
 
 //Watchdog Helper
 bool reset_needed = false;
@@ -157,6 +167,9 @@ ultrasonicsensor ultraSonicFish(fishTrigpin, fishEchopin);
 ultrasonicsensor ultraSonicTank(tankTrigpin, tankEchopin);
 //RTC
 virtuabotixRTC myRTC(RTC_CLK, RTC_IO, RTC_C_E);
+//Queue for String that are to be sent to ESP bufferring
+QueueList <String> stringQueue;
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -236,16 +249,16 @@ void setup() {
 void loop() {
   watchdog_reset(reset_needed);
   update_time();
-  if (timeDiff >= 1) {
-    lastRead_second = myRTC.seconds;
-    get_sensors_value();
-    get_button_routine_selector();
+  if ((mil = (millis())) - t >= 1000){
+    unsigned long t_offset = mil-t-1000;
+    t = mil-t_offset;
     //check if there is any message from esp32
     if(Serial1.available() > 0){
       char bfr[501];
       memset(bfr,0, 501);
       Serial1.readBytesUntil('\n',bfr,500);
       String message(bfr);
+      Serial.println(message);
       //try open the file
       myFile = SD.open(message+logFileExtension);
       if(myFile){
@@ -258,6 +271,17 @@ void loop() {
           //file may take long time to be transferred
           //this part may cause bug in the program though
           watchdog_reset(reset_needed);
+          update_time();
+          if(timeDiff >= 1){
+            lastRead_second = myRTC.seconds;
+            if(lastRead_minute != myRTC.minutes){
+              lastRead_minute = myRTC.minutes;
+              get_sensors_value();
+              check_minute_control_flags();
+              log_into_SDcard();
+              reset_minute_control_flags();
+            }
+          }
         }
         myFile.close();
         myFile = SD.open(systemStatusFile, FILE_WRITE);
@@ -271,9 +295,14 @@ void loop() {
       }
       else{
         //no such file -> command
-        online_command(message);
+        online_command(bfr);
       }
     }
+  }
+  if (timeDiff >= 1) {
+    lastRead_second = myRTC.seconds;
+    get_sensors_value();
+    get_button_routine_selector();
     if (on_button_routine_flag) {
       on_button_routine();
     }
@@ -285,7 +314,25 @@ void loop() {
       lastTimeDiffRecord = myRTC.seconds;
       add_smoothing_data();
     }
+    if((myRTC.hours == water_schedule_hr1 || myRTC.hours == water_schedule_hr2)
+          && myRTC.minutes == 0){
+      if(myRTC.seconds == 0 || myRTC.seconds == 1){
+        max_soil_moisture_after_watering = 0.0;
+      }
+      if(loop_soilMoisture > max_soil_moisture_after_watering){
+        max_soil_moisture_after_watering = loop_soilMoisture;
+      }
+    }
+    if((myRTC.hours == water_schedule_hr1 || myRTC.hours == water_schedule_hr2)
+          && myRTC.minutes == 1 && (myRTC.seconds == 0 || myRTC.seconds == 1)){
+      if(max_soil_moisture_after_watering < max_soil_moisture_after_watering_threshold){
+        //Serial1.println("water pump is not working");
+        stringQueue.push("water pump is not working\n");
+      }
+    }
     if(lastRead_minute != myRTC.minutes){
+      //minute check for air pump
+      //for air pump timer that we really need to have it runs for xxx minutes each day
       lastRead_minute = myRTC.minutes;
       if(minute_control_flags[1]){
         airTimer++;
@@ -295,6 +342,7 @@ void loop() {
       reset_minute_control_flags();
     }
     print_for_serial_monitor();
+    dequeue_all_string_to_esp();
   }
 }
 
@@ -324,18 +372,18 @@ void get_sensors_value() {
 void get_button_routine_selector() {
   bool on_reading = digitalRead(buttonOn);
   bool off_reading = digitalRead(buttonOff);
-  Serial.println(on_reading);
-  Serial.println(off_reading);
+  //Serial.println(on_reading);
+  //Serial.println(off_reading);
   if (on_reading == LOW) {
-    Serial.println("1");
+    //Serial.println("1");
     if (myRTC.hours > 6 && myRTC.hours < 18){
       //change to on button routine
       //on button routine can only occurs between 8:00 to 16:00 of monday to saturday though
-      Serial.println("2");
+      //Serial.println("2");
       on_button_routine_flag = true;
       off_button_routine_flag = false;
     }else{
-      Serial.println("3");
+      //Serial.println("3");
       change_on_to_off_routine();
       on_button_routine_flag = false;
       off_button_routine_flag = true;
@@ -343,7 +391,7 @@ void get_button_routine_selector() {
   }
   else if (off_reading == LOW) {
     //change to off button routine
-    Serial.println("4");
+    //Serial.println("4");
     change_on_to_off_routine();
     on_button_routine_flag = false;
     off_button_routine_flag = true;
@@ -351,7 +399,7 @@ void get_button_routine_selector() {
 }
 
 void on_button_routine() {
-  Serial.println("on routine");
+  //Serial.println("on routine");
   writeControl(water_pump, HIGH);
   writeControl(valve1, LOW);
   writeControl(valve2, LOW);
@@ -363,55 +411,62 @@ void change_on_to_off_routine(){
 }
 
 void off_button_routine() {
-  Serial.println("off routine");
-  if(automatic_control){
-    Serial.println("automatic control");
-    check_air_pump_control();
-    check_water_pump_control();
-    check_valves_control();
-    check_minute_control_flags();
-  }
-  else{
-    Serial.println("online manual control");
-  }
+  //Serial.println("off routine");
+  check_air_pump_control();
+  check_water_pump_control();
+  check_valves_control();
+  check_minute_control_flags();
 }
 
 void check_air_pump_control() {
-  if((myRTC.hours == air_pump_checking_schedule1 || myRTC.hours == air_pump_checking_schedule2)
-          && myRTC.minutes == 0 && myRTC.seconds == 0){
-    //routine based air pump checking
-    if(airTimer < expected_half_daily_air_pump_minute){
-      airNeededTimer = expected_half_daily_air_pump_minute - airTimer;
+  if(automatic_control){
+    if((myRTC.hours == air_pump_checking_schedule1 || myRTC.hours == air_pump_checking_schedule2)
+            && myRTC.minutes == 0 && (myRTC.seconds == 0 || myRTC.seconds == 1)){
+      //routine based air pump checking
+      if(airTimer < expected_half_daily_air_pump_minute){
+        airNeededTimer = expected_half_daily_air_pump_minute - airTimer;
+      }
+      airTimer = -airNeededTimer;
     }
-    airTimer = -airNeededTimer;
-  }
-  else if(airNeededTimer <= 0){
-    if (loop_O2 > o2UpperBound) {
-      writeControl(air_pump, LOW); //close
+    else if(airNeededTimer <= 0){
+      if (loop_O2 > o2UpperBound) {
+        writeControl(air_pump, LOW); //close
+      }
+      if (loop_O2 < o2LowerBound) {
+        writeControl(air_pump, HIGH); //open
+      }
     }
-    if (loop_O2 < o2LowerBound) {
+    else{
       writeControl(air_pump, HIGH); //open
     }
-  }
-  else{
-    writeControl(air_pump, HIGH); //open
+  }else{
+    //do nothing(?)
   }
 }
 
 void check_water_pump_control() {
-  if (loop_ultra_fish > fishCriticalWaterLevel) {
-    writeControl(water_pump, LOW);
-  }
-  else if ((myRTC.hours == water_schedule_hr1 || myRTC.hours == water_schedule_hr2)
-           && myRTC.minutes == 0 && myRTC.seconds == 0) {
-    writeControl(water_pump, HIGH);
-    waterTimer = 0;
+  if(automatic_control){
+    if (loop_ultra_fish > fishCriticalWaterLevel) {
+      writeControl(water_pump, LOW);
+    }
+    else if ((myRTC.hours == water_schedule_hr1 || myRTC.hours == water_schedule_hr2)
+            && myRTC.minutes == 0 && (myRTC.seconds == 0 || myRTC.seconds == 1)) {
+      writeControl(water_pump, HIGH);
+      waterTimer = 0;
+    }
   }
 
   if (control_flags[water_pump_index] == HIGH) {
     waterTimer++;
   }
-  if (waterTimer > 15) {
+
+  if (!automatic_control && waterTimer > manual_water_time){
+    //for online manual control
+    writeControl(water_pump, LOW);
+    waterTimer = 0;
+  }
+  else if (waterTimer > max_watering_time) {
+    //for automatic control
     writeControl(water_pump, LOW);
     waterTimer = 0;
   }
@@ -419,19 +474,21 @@ void check_water_pump_control() {
 
 void check_valves_control() {
   //valve
-  if ((myRTC.hours == soil_water_schedule_hr1 || myRTC.hours == soil_water_schedule_hr2)
-      && myRTC.minutes == 0 && myRTC.seconds == 0) {
-    if (loop_soilMoisture < soilLowerBound) {
-      writeControl(valve2, HIGH);
-      valve2Timer = 0;
+  if(automatic_control){
+    if ((myRTC.hours == soil_water_schedule_hr1 || myRTC.hours == soil_water_schedule_hr2)
+        && myRTC.minutes == 0 && myRTC.seconds == 0) {
+      if (loop_soilMoisture < soilLowerBound) {
+        writeControl(valve2, HIGH);
+        valve2Timer = 0;
+      }
     }
-  }
 
-  if ((myRTC.hours == water_level_schedule_hr1 || myRTC.hours == water_level_schedule_hr2)
-      && myRTC.minutes == 45 && myRTC.seconds == 0) {
-    if (loop_ultra_fish > fishCriticalWaterLevel) {
-      writeControl(valve1, HIGH);
-      valve1Timer = 0;
+    if ((myRTC.hours == water_level_schedule_hr1 || myRTC.hours == water_level_schedule_hr2)
+        && myRTC.minutes == 45 && myRTC.seconds == 0) {
+      if (loop_ultra_fish > fishCriticalWaterLevel) {
+        writeControl(valve1, HIGH);
+        valve1Timer = 0;
+      }
     }
   }
 
@@ -442,12 +499,23 @@ void check_valves_control() {
     valve2Timer++;
   }
 
-  if (valve1Timer > 20) {
-    writeControl(valve1, LOW);
+  if(!automatic_control){
+    if(valve1Timer > manual_valve1_time){
+      writeControl(valve1, LOW);
+    }
+    if(valve2Timer > manual_valve2_time){
+      writeControl(valve2, LOW);
+    }
   }
-  if (valve2Timer > 10) {
-    writeControl(valve2, LOW);
+  else{
+    if (valve1Timer > 20) {
+      writeControl(valve1, LOW);
+    }
+    if (valve2Timer > 10) {
+      writeControl(valve2, LOW);
+    }
   }
+
 }
 
 void add_smoothing_data() {
@@ -474,20 +542,26 @@ void average_smoothing_data(){
 void log_into_SDcard(){
   myFile = SD.open(create_log_file_name(), FILE_WRITE);
   if(myFile){
-      myFile.println(create_sensors_actuators_log_string(NO_ERR));
-      send_data_log_to_esp(NO_ERR);
+    myFile.println(create_sensors_actuators_log_string(NO_ERR));
+    //send_data_log_to_esp(NO_ERR);
+    stringQueue.push(create_sensors_actuators_log_string(NO_ERR));
     myFile.close();
   }
   else{
     //SDcard module failed
-    send_data_log_to_esp(SD_CONN_ERR);
+    //send_data_log_to_esp(SD_CONN_ERR);
+    stringQueue.push(create_sensors_actuators_log_string(SD_CONN_ERR));
     Serial.println("SDCard Failed");
     reset_needed = true;
   }
 }
 
-void online_command(String command){
-  switch (command)
+void online_command(char* command){
+  char *token, *date_token, *time_token;
+  String date, time;
+  token = strtok(command, "_");
+  int command_id = atoi(token);
+  switch (command_id)
   {
   case ONLINE_MANUAL_CONTROL:
     automatic_control = false;
@@ -495,6 +569,9 @@ void online_command(String command){
     writeControl(air_pump, HIGH);
     writeControl(valve1, LOW);
     writeControl(valve2, LOW);
+    //Serial1.println("500_online,on");
+    stringQueue.push("500_online,on\n");
+    sendAllControlStatusesToEsp();
     break;
   case AUTOMATIC_CONTROL:
     automatic_control = true;
@@ -502,12 +579,28 @@ void online_command(String command){
     writeControl(air_pump, HIGH);
     writeControl(valve1, LOW);
     writeControl(valve2, LOW);
+    //Serial1.println("500_online,off");
+    stringQueue.push("500_online,off\n");
+    sendAllControlStatusesToEsp();
+    break;
+  case TIME_SET:
+    date_token = strtok(NULL, ",");
+    date = String(date_token);
+    time_token = strtok(NULL, ",");
+    time = String(time_token);
+    setRealStartTime(F(__DATE__), F(__TIME__));
+    myRTC.setDS1302Time(ss, mm, hh, dayofweek(d, m, yOff+2000), d, m, yOff+2000);
+    break;
+  case ACTUATORS_STATUS_REQUEST:
+    sendAllControlStatusesToEsp();
     break;
   default:
-    if(automatic_control){
-      switch (command)
+    if(!automatic_control){
+      int duration = atoi(strtok(NULL,"_"));
+      switch (command_id)
       {
       case OPEN_WATER_PUMP:
+        set_manual_water_time(duration);
         writeControl(water_pump, HIGH);
         break;
       case CLOSE_WATER_PUMP:
@@ -533,13 +626,21 @@ void online_command(String command){
         break;
       
       default:
-        Serial.print("unknown online command:");
+        Serial.print("unknown manual command:");
         Serial.println(command);
         break;
       }
     }
+    else{
+      Serial.print("unknown non-manual command:");
+      Serial.println(command);
+    }
     break;
   }
+}
+
+void set_manual_water_time(int seconds){
+  manual_water_time = (seconds < max_watering_time) ? seconds : max_watering_time;
 }
 
 String create_log_file_name(){
@@ -579,8 +680,13 @@ void send_data_log_to_esp(int statusFlag){
   Serial1.println(create_sensors_actuators_log_string(statusFlag));
 }
 
+void dequeue_all_string_to_esp(){
+  while(!stringQueue.isEmpty ())
+    Serial1.println(stringQueue.pop());
+}
+
 void print_for_serial_monitor(){
-    Serial.println(create_sensors_actuators_log_string(NO_ERR));
+  Serial.println(create_sensors_actuators_log_string(NO_ERR));
 }
 
 void writeControl(int ch, int output) {
@@ -591,8 +697,35 @@ void writeControl(int ch, int output) {
     case valve1: index = 2; break;
     case valve2: index = 3; break;
   }
-  control_flags[index] = output;
+  if(control_flags[index] != output){
+    control_flags[index] = output;
+    sendControlStatusToEsp(ch, output);
+  }
   digitalWrite(ch, output);
+}
+
+void sendControlStatusToEsp(int ch, int output){
+  Serial1.print("500_");
+  switch(ch){
+    case water_pump: Serial1.print("water_pump"); break;
+    case air_pump:   Serial1.print("air_pump");   break;
+    case valve1:     Serial1.print("valve1");     break;
+    case valve2:     Serial1.print("valve2");     break;
+  }
+  Serial1.println((output) ? ",on" : ",off");
+}
+
+void sendAllControlStatusesToEsp(){
+  for(int i=0;i<controllable_num;i++){
+    Serial1.print("500_");
+    switch(i){
+      case water_pump_index: Serial1.print("water_pump"); break;
+      case air_pump_index:   Serial1.print("air_pump");   break;
+      case valve1_index:     Serial1.print("valve1");     break;
+      case valve2_index:     Serial1.print("valve2");     break;
+    }
+    Serial1.println((control_flags[i]) ? ",on" : ",off");
+  }
 }
 
 void setRealStartTime (const __FlashStringHelper* date, const __FlashStringHelper* time) {
