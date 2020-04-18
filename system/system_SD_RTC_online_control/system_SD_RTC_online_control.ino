@@ -118,7 +118,8 @@ float max_soil_moisture_after_watering_threshold = 80.0;
 
 #define air_pump_checking_schedule1 6 //6am
 #define air_pump_checking_schedule2 18 //6pm
-#define expected_half_daily_air_pump_minute 360 //360minutes
+#define expected_half_daily_air_pump_minute 360 //360minutes, 6 hours
+#define expected_half_daily_air_pump_rest_minute 180 //3hours
 long airNeededTimer = 0;
 long airTimer = 0;
 
@@ -153,7 +154,10 @@ unsigned int controllable_num = 4;
 #define OPEN_VALVE2               141
 #define CLOSE_VALVE2              140
 #define TIME_SET                  300
+#define DO_THRESHOLD_SET          310
+#define DO_THRESHOLD_SET_RESPONSE 311
 #define ACTUATORS_STATUS_REQUEST  400
+
 
 //Watchdog Helper
 bool reset_needed = false;
@@ -327,7 +331,7 @@ void loop() {
           && myRTC.minutes == 1 && (myRTC.seconds == 0 || myRTC.seconds == 1)){
       if(max_soil_moisture_after_watering < max_soil_moisture_after_watering_threshold){
         //Serial1.println("water pump is not working");
-        stringQueue.push("water pump is not working\n");
+        stringQueue.push("600_water pump is not working\n");
       }
     }
     if(lastRead_minute != myRTC.minutes){
@@ -421,7 +425,7 @@ void off_button_routine() {
 void check_air_pump_control() {
   if(automatic_control){
     if((myRTC.hours == air_pump_checking_schedule1 || myRTC.hours == air_pump_checking_schedule2)
-            && myRTC.minutes == 0 && (myRTC.seconds == 0 || myRTC.seconds == 1)){
+            && myRTC.minutes == 0 && (myRTC.seconds == 0/* || myRTC.seconds == 1*/)){
       //routine based air pump checking
       if(airTimer < expected_half_daily_air_pump_minute){
         airNeededTimer = expected_half_daily_air_pump_minute - airTimer;
@@ -429,11 +433,11 @@ void check_air_pump_control() {
       airTimer = -airNeededTimer;
     }
     else if(airNeededTimer <= 0){
-      if (loop_O2 > o2UpperBound) {
-        writeControl(air_pump, LOW); //close
-      }
-      if (loop_O2 < o2LowerBound) {
+      if (loop_O2 < o2LowerBound && airTimer < expected_half_daily_air_pump_rest_minute) {
         writeControl(air_pump, HIGH); //open
+      }
+      else /*(loop_O2 > o2UpperBound)*/ {
+        writeControl(air_pump, LOW); //close
       }
     }
     else{
@@ -590,6 +594,13 @@ void online_command(char* command){
     time = String(time_token);
     setRealStartTime(F(__DATE__), F(__TIME__));
     myRTC.setDS1302Time(ss, mm, hh, dayofweek(d, m, yOff+2000), d, m, yOff+2000);
+    break;
+  case DO_THRESHOLD_SET:
+    o2LowerBound = atoi(strtok(NULL,"_"));
+    o2UpperBound = atoi(strtok(NULL,"_"));
+    stringQueue.push(String(DO_THRESHOLD_SET_RESPONSE) + "_" + String(myRTC.year) + "/" + String(myRTC.month) + "/" + String(myRTC.dayofmonth)
+            + " " + String(myRTC.hours) + ":" + String(myRTC.minutes) + ":"
+            + String(myRTC.seconds) + "," + String(o2LowerBound)+ "," + String(o2UpperBound));
     break;
   case ACTUATORS_STATUS_REQUEST:
     sendAllControlStatusesToEsp();

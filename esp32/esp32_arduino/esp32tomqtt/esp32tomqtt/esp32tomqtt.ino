@@ -4,6 +4,11 @@ Main ESP(Nano 32) code to run on the real system.
 #include <WiFi.h> //Wifi library
 #include <PubSubClient.h>
 //////// wifi config///////////////
+const char* ssid;
+const char* password;
+
+const char* mqtt_server; //<-- IP หรือ Domain ของ Server MQTT
+const char* mqtt_secondary_server;
 bool use_mqtt_secondary_server = false;
 long lastMsg = 0;
 char msg[100];
@@ -114,6 +119,9 @@ void loop() {
         else if(atoi(token) == 600){
           token = strtok(NULL, "\0");
           client.publish(time_set_request_topic, token);
+        }
+        else if(atoi(token) == 311){
+          client.publish(time_set_request_topic, bfr);
         }
       }
       else{
