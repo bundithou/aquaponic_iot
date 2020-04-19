@@ -247,6 +247,7 @@ void setup() {
     get_sensors_value();
     add_smoothing_data();
     delay(100);
+    watchdog_reset(reset_needed);
   }
 }
 
