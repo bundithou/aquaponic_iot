@@ -8,7 +8,7 @@ run on esp
 const char* ssid = "MUICT_Aquaponic";
 const char* password = "0907327727";
 
-const char* mqtt_server = "35.198.234.67"; //<-- IP หรือ Domain ของ Server MQTT
+const char* mqtt_server = "35.198.192.196"; //<-- IP หรือ Domain ของ Server MQTT
 long lastMsg = 0;
 char msg[100];
 int value = 0;
