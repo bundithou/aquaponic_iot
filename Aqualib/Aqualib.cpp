@@ -34,7 +34,8 @@ void pHsensor::calculatepH(void)
 		pHArray[pHArrayIndex++] = analogRead(this->pH_pin);
 		if (pHArrayIndex == ArrayLenth)pHArrayIndex = 0;
 		vol = avergearray(pHArray, ArrayLenth)*5.0 / 1024;
-		pv = 3.5*vol + Offset;
+		//pv = 3.5*vol + Offset;
+		pv = (analogRead(this->pH_pin) + 60.1399) / 65.03497;
 		samplingTime = millis();
 	}
 	if (millis() - printTime > printInterval)   //Every 800 milliseconds, print a numerical, convert the state of the LED indicator
@@ -329,7 +330,7 @@ soilMoisturesensor::soilMoisturesensor(int pin)
 }
 
 float soilMoisturesensor::getSoilMoisture(void) {
-	return (100.00 - ((analogRead(this->soil_pin) / 1023.00) * 100.00));
+	return ((591.00 - (float)(analogRead(this->soil_pin))) / 280.00) * 100.00;
 }
 
 
