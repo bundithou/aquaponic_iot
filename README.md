@@ -8,7 +8,7 @@ A collection of codes for aquaponic system project.
 A system with RTC and SD Card module for data logging, and online controlling function. The code was uploaded onto an ARDUINO MEGA 2560.
 
 [esp32tomqtt.ino](https://github.com/bundithou/aquaponic_iot/tree/master/esp32/esp32_arduino/esp32tomqtt/esp32tomqtt)
-ESP32 code, actually used on an Nano32. Function as an middleman between the server and the arduino.
+ESP32 code, actually used on an Nano32. Function as the middleman between the server and the arduino.
 
 Consists of both monitoring and controlling over DO, pH, water level, soil moisture, and temperature.
 
