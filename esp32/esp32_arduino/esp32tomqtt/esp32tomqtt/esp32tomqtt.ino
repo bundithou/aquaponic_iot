@@ -7,8 +7,7 @@ Main ESP(Nano 32) code to run on the real system.
 const char* ssid;
 const char* password;
 
-const char* mqtt_server = "35.198.192.196"; //<-- IP หรือ Domain ของ Server MQTT
-
+const char* mqtt_server; //<-- IP หรือ Domain ของ Server MQTT
 const char* mqtt_secondary_server;
 bool use_mqtt_secondary_server = false;
 

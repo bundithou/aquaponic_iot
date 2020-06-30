@@ -157,6 +157,7 @@ unsigned int controllable_num = 4;
 #define DO_THRESHOLD_SET          310
 #define DO_THRESHOLD_SET_RESPONSE 311
 #define ACTUATORS_STATUS_REQUEST  400
+#define CONTROL_STATUS_RESPONSE   500
 
 
 //Watchdog Helper
@@ -257,7 +258,61 @@ void loop() {
   if ((mil = (millis())) - t >= 1000){
     unsigned long t_offset = mil-t-1000;
     t = mil-t_offset;
-    //check if there is any message from esp32
+    check_esp_message();
+  }
+  if (timeDiff >= 1) {
+    lastRead_second = myRTC.seconds;
+    get_sensors_value();
+    get_button_routine_selector();
+    if (on_button_routine_flag) {
+      on_button_routine();
+    }
+    else if (off_button_routine_flag) {
+      off_button_routine();
+    }
+    check_minute_control_flags();
+    if(timeDiffRecord >= 6){
+      lastTimeDiffRecord = myRTC.seconds;
+      add_smoothing_data();
+    }
+    if((myRTC.hours == water_schedule_hr1 || myRTC.hours == water_schedule_hr2)
+          && myRTC.minutes == 0){
+      if(myRTC.seconds == 0 || myRTC.seconds == 1){
+        max_soil_moisture_after_watering = 0.0;
+      }
+      if(loop_soilMoisture > max_soil_moisture_after_watering){
+        max_soil_moisture_after_watering = loop_soilMoisture;
+      }
+    }
+    if((myRTC.hours == water_schedule_hr1 || myRTC.hours == water_schedule_hr2)
+          && myRTC.minutes == 1 && (myRTC.seconds == 0 || myRTC.seconds == 1)){
+      if(max_soil_moisture_after_watering < max_soil_moisture_after_watering_threshold){
+        stringQueue.push("600_water pump is not working\n");
+      }
+    }
+    if(lastRead_minute != myRTC.minutes){
+      //minute check for air pump
+      //for air pump timer that we really need to have it runs for xxx minutes each day
+      lastRead_minute = myRTC.minutes;
+      if(minute_control_flags[1]){
+        airTimer++;
+        airNeededTimer--;
+      }
+      log_into_SDcard();
+      reset_minute_control_flags();
+    }
+    print_for_serial_monitor();
+    dequeue_all_string_to_esp();
+  }
+}
+
+void watchdog_reset(bool reset_needed) {
+  if (!reset_needed) {
+    wdt_reset();
+  }
+}
+
+void check_esp_message(){
     if(Serial1.available() > 0){
       char bfr[501];
       memset(bfr,0, 501);
@@ -303,58 +358,6 @@ void loop() {
         online_command(bfr);
       }
     }
-  }
-  if (timeDiff >= 1) {
-    lastRead_second = myRTC.seconds;
-    get_sensors_value();
-    get_button_routine_selector();
-    if (on_button_routine_flag) {
-      on_button_routine();
-    }
-    else if (off_button_routine_flag) {
-      off_button_routine();
-    }
-    check_minute_control_flags();
-    if(timeDiffRecord >= 6){
-      lastTimeDiffRecord = myRTC.seconds;
-      add_smoothing_data();
-    }
-    if((myRTC.hours == water_schedule_hr1 || myRTC.hours == water_schedule_hr2)
-          && myRTC.minutes == 0){
-      if(myRTC.seconds == 0 || myRTC.seconds == 1){
-        max_soil_moisture_after_watering = 0.0;
-      }
-      if(loop_soilMoisture > max_soil_moisture_after_watering){
-        max_soil_moisture_after_watering = loop_soilMoisture;
-      }
-    }
-    if((myRTC.hours == water_schedule_hr1 || myRTC.hours == water_schedule_hr2)
-          && myRTC.minutes == 1 && (myRTC.seconds == 0 || myRTC.seconds == 1)){
-      if(max_soil_moisture_after_watering < max_soil_moisture_after_watering_threshold){
-        //Serial1.println("water pump is not working");
-        stringQueue.push("600_water pump is not working\n");
-      }
-    }
-    if(lastRead_minute != myRTC.minutes){
-      //minute check for air pump
-      //for air pump timer that we really need to have it runs for xxx minutes each day
-      lastRead_minute = myRTC.minutes;
-      if(minute_control_flags[1]){
-        airTimer++;
-        airNeededTimer--;
-      }
-      log_into_SDcard();
-      reset_minute_control_flags();
-    }
-    print_for_serial_monitor();
-    dequeue_all_string_to_esp();
-  }
-}
-
-void watchdog_reset(bool reset_needed) {
-  if (!reset_needed) {
-    wdt_reset();
-  }
 }
 
 void update_time() {
@@ -377,26 +380,20 @@ void get_sensors_value() {
 void get_button_routine_selector() {
   bool on_reading = digitalRead(buttonOn);
   bool off_reading = digitalRead(buttonOff);
-  //Serial.println(on_reading);
-  //Serial.println(off_reading);
   if (on_reading == LOW) {
-    //Serial.println("1");
     if (myRTC.hours > 6 && myRTC.hours < 18){
       //change to on button routine
       //on button routine can only occurs between 8:00 to 16:00 of monday to saturday though
-      //Serial.println("2");
       on_button_routine_flag = true;
       off_button_routine_flag = false;
     }else{
-      //Serial.println("3");
       change_on_to_off_routine();
       on_button_routine_flag = false;
       off_button_routine_flag = true;
     }
   }
   else if (off_reading == LOW) {
-    //change to off button routine
-    //Serial.println("4");
+    //change to off button 
     change_on_to_off_routine();
     on_button_routine_flag = false;
     off_button_routine_flag = true;
@@ -404,7 +401,6 @@ void get_button_routine_selector() {
 }
 
 void on_button_routine() {
-  //Serial.println("on routine");
   writeControl(water_pump, HIGH);
   writeControl(valve1, LOW);
   writeControl(valve2, LOW);
@@ -416,7 +412,6 @@ void change_on_to_off_routine(){
 }
 
 void off_button_routine() {
-  //Serial.println("off routine");
   check_air_pump_control();
   check_water_pump_control();
   check_valves_control();
@@ -437,7 +432,7 @@ void check_air_pump_control() {
       if (loop_O2 < o2LowerBound && airTimer < expected_half_daily_air_pump_rest_minute) {
         writeControl(air_pump, HIGH); //open
       }
-      else /*(loop_O2 > o2UpperBound)*/ {
+      else if(loop_O2 > o2UpperBound) {
         writeControl(air_pump, LOW); //close
       }
     }
@@ -548,13 +543,11 @@ void log_into_SDcard(){
   myFile = SD.open(create_log_file_name(), FILE_WRITE);
   if(myFile){
     myFile.println(create_sensors_actuators_log_string(NO_ERR));
-    //send_data_log_to_esp(NO_ERR);
     stringQueue.push(create_sensors_actuators_log_string(NO_ERR));
     myFile.close();
   }
   else{
     //SDcard module failed
-    //send_data_log_to_esp(SD_CONN_ERR);
     stringQueue.push(create_sensors_actuators_log_string(SD_CONN_ERR));
     Serial.println("SDCard Failed");
     reset_needed = true;
@@ -574,7 +567,6 @@ void online_command(char* command){
     writeControl(air_pump, HIGH);
     writeControl(valve1, LOW);
     writeControl(valve2, LOW);
-    //Serial1.println("500_online,on");
     stringQueue.push("500_online,on\n");
     sendAllControlStatusesToEsp();
     break;
@@ -584,7 +576,6 @@ void online_command(char* command){
     writeControl(air_pump, HIGH);
     writeControl(valve1, LOW);
     writeControl(valve2, LOW);
-    //Serial1.println("500_online,off");
     stringQueue.push("500_online,off\n");
     sendAllControlStatusesToEsp();
     break;
@@ -729,12 +720,12 @@ void sendControlStatusToEsp(int ch, int output){
 
 void sendAllControlStatusesToEsp(){
   for(int i=0;i<controllable_num;i++){
-    Serial1.print("500_");
+    Serial1.print(CONTROL_STATUS_RESPONSE);
     switch(i){
-      case water_pump_index: Serial1.print("water_pump"); break;
-      case air_pump_index:   Serial1.print("air_pump");   break;
-      case valve1_index:     Serial1.print("valve1");     break;
-      case valve2_index:     Serial1.print("valve2");     break;
+      case water_pump_index: Serial1.print("_water_pump"); break;
+      case air_pump_index:   Serial1.print("_air_pump");   break;
+      case valve1_index:     Serial1.print("_valve1");     break;
+      case valve2_index:     Serial1.print("_valve2");     break;
     }
     Serial1.println((control_flags[i]) ? ",on" : ",off");
   }
